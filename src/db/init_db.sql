@@ -49,6 +49,7 @@ CREATE TABLE driver (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name TEXT NOT NULL,
     role_id INTEGER NOT NULL,
+    can_use_foreign BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_driver_role
         FOREIGN KEY (role_id) REFERENCES role(id)
 );
@@ -97,13 +98,27 @@ CREATE TABLE element_chain (
         UNIQUE (element1_id, element2_id, element3_id)
 );
 
-CREATE TABLE translation (
+-- Drivers who may never use a blade (assignment + combat).
+CREATE TABLE blade_driver_exclude (
     id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    translation_key TEXT NOT NULL,
-    language TEXT NOT NULL,
-    translated_text TEXT NOT NULL,
-    CONSTRAINT uq_translation_text_language
-        UNIQUE (translation_key, language)
+    blade_id INTEGER NOT NULL,
+    driver_id INTEGER NOT NULL,
+    CONSTRAINT fk_bde_blade
+        FOREIGN KEY (blade_id) REFERENCES blade(id),
+    CONSTRAINT fk_bde_driver
+        FOREIGN KEY (driver_id) REFERENCES driver(id),
+    CONSTRAINT uq_bde_blade_driver
+        UNIQUE (blade_id, driver_id)
+);
+
+-- Blades a foreign-use driver (Rex) still cannot borrow.
+CREATE TABLE foreign_blade_exclude (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    blade_id INTEGER NOT NULL,
+    CONSTRAINT fk_fbe_blade
+        FOREIGN KEY (blade_id) REFERENCES blade(id),
+    CONSTRAINT uq_fbe_blade
+        UNIQUE (blade_id)
 );
 
 -- index
@@ -291,16 +306,16 @@ join weapon w on w.name = b.w_name
 join element e1 on e1.name = b.e1
 left join element e2 on e2.name = b.e2;
 
-INSERT INTO driver (name, role_id)
-SELECT d.name, r.id
+INSERT INTO driver (name, role_id, can_use_foreign)
+SELECT d.name, r.id, d.can_use_foreign
 FROM (
     VALUES
-        ('rex', 'Attacker'),
-        ('nia', 'Healer'),
-        ('merefu', 'Tank'),
-        ('zig', 'Attacker'),
-        ('tora', 'Tank')
-) AS d(name,r_name)
+        ('rex', 'Attacker', TRUE),
+        ('nia', 'Healer', FALSE),
+        ('merefu', 'Tank', FALSE),
+        ('zig', 'Attacker', FALSE),
+        ('tora', 'Tank', FALSE)
+) AS d(name, r_name, can_use_foreign)
 join role r on r.name = d.r_name;
 
 INSERT INTO blade_bind_driver (blade_id, driver_id, is_fixed)
@@ -324,6 +339,27 @@ FROM (
 ) AS x(b_name, d_name, is_fixed)
 JOIN blade b ON b.name = x.b_name
 JOIN driver d ON d.name = x.d_name;
+
+-- Poppibuster cannot be assigned to / used by Tora.
+INSERT INTO blade_driver_exclude (blade_id, driver_id)
+SELECT b.id, d.id
+FROM (
+    VALUES
+        ('poppibuster', 'tora')
+) AS x(b_name, d_name)
+JOIN blade b ON b.name = x.b_name
+JOIN driver d ON d.name = x.d_name;
+
+-- Rex can use others' blades except Poppi α / QT / QTπ.
+INSERT INTO foreign_blade_exclude (blade_id)
+SELECT b.id
+FROM (
+    VALUES
+        ('hana js'),
+        ('hana jk'),
+        ('hana jd')
+) AS x(b_name)
+JOIN blade b ON b.name = x.b_name;
 
 insert into driver_weapon_effect (driver_id, weapon_id, effect_id)
 select d.id, w.id, e.id

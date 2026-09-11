@@ -1,10 +1,9 @@
 import { PGlite } from "@electric-sql/pglite"
 import initSql from "../db/init_db.sql?raw"
-import translationsSql from "../db/translations.sql?raw"
 import type { Catalog } from "../types/common"
 import { buildCatalog } from "./catalog"
 
-type DriverRow = { id: number; name: string; role: string }
+type DriverRow = { id: number; name: string; role: string; can_use_foreign: boolean }
 type BladeRow = {
   id: number
   name: string
@@ -15,7 +14,7 @@ type BladeRow = {
 }
 type BindRow = { blade: string; driver: string; is_fixed: boolean }
 type EffectRow = { driver: string; weapon: string; effect: string }
-type TranslationRow = { translation_key: string; language: string; translated_text: string }
+type ExcludeRow = { blade: string; driver: string }
 
 export default class DB {
   private static instance: DB | undefined
@@ -31,18 +30,16 @@ export default class DB {
 
   private constructor() {
     this.db = new PGlite()
-    this.ready = this.db.exec(initSql)
-      .then(() => this.db.exec(translationsSql))
-      .then(() => undefined)
+    this.ready = this.db.exec(initSql).then(() => undefined)
   }
 
   async getCatalog(): Promise<Catalog> {
     if (this.catalog)
       return this.catalog
     await this.ready
-    const [drivers, blades, binds, effects, translations] = await Promise.all([
+    const [drivers, blades, binds, effects, excludes, foreignBlocked] = await Promise.all([
       this.db.query<DriverRow>(`
-        SELECT d.id, d.name, r.name AS role
+        SELECT d.id, d.name, r.name AS role, d.can_use_foreign
         FROM driver d
         JOIN role r ON r.id = d.role_id
         ORDER BY d.id
@@ -75,9 +72,16 @@ export default class DB {
         JOIN weapon w ON w.id = dwe.weapon_id
         JOIN effect e ON e.id = dwe.effect_id
       `),
-      this.db.query<TranslationRow>(`
-        SELECT translation_key, language, translated_text
-        FROM translation
+      this.db.query<ExcludeRow>(`
+        SELECT b.name AS blade, d.name AS driver
+        FROM blade_driver_exclude bde
+        JOIN blade b ON b.id = bde.blade_id
+        JOIN driver d ON d.id = bde.driver_id
+      `),
+      this.db.query<{ blade: string }>(`
+        SELECT b.name AS blade
+        FROM foreign_blade_exclude fbe
+        JOIN blade b ON b.id = fbe.blade_id
       `),
     ])
     this.catalog = buildCatalog({
@@ -85,7 +89,8 @@ export default class DB {
       blades: blades.rows,
       binds: binds.rows,
       effects: effects.rows,
-      translations: translations.rows,
+      excludes: excludes.rows,
+      foreignBlocked: foreignBlocked.rows.map(r => r.blade),
     })
     return this.catalog
   }

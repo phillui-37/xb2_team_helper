@@ -1,4 +1,4 @@
-import type { Catalog, MemberState, TeamMember, TeamResult } from "../types/common"
+import type { BladeOwners, Catalog, MemberState, TeamMember, TeamResult } from "../types/common"
 
 export const RESULT_CAP = 100
 export const NIA = 'nia'
@@ -85,6 +85,7 @@ export function solve(
   catalog: Catalog,
   members: MemberState[],
   redundancy: boolean,
+  owners: BladeOwners,
 ): TeamResult[] {
   if (members.length !== 3 || members.some(m => !m.driver))
     return []
@@ -161,7 +162,7 @@ export function solve(
       return
 
     const work = works[driverOrd] as DriverWork
-    const available = (catalog.solverCandidates.get(work.driver) ?? []).filter(b => {
+    const available = catalog.solverCandidatesFor(work.driver, owners).filter(b => {
       if ((usedMask & (1n << BigInt(b.index))) !== 0n)
         return false
       if (niaDriverPicked && b.name === NIA)

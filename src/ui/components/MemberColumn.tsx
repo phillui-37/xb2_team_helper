@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Clear } from "@mui/icons-material"
 import { Chip, FormControl, IconButton, InputLabel, MenuItem, Select, TextField } from "@mui/material"
-import type { BladeInfo, Catalog, MemberState, SlotName } from "../../types/common"
+import type { BladeInfo, BladeOwners, Catalog, MemberState, SlotName } from "../../types/common"
 import { NIA } from "../../model/solver"
 import { useI18n } from "../i18n/LanguageContext"
 
@@ -17,6 +17,7 @@ export type MemberColumnProps = {
   catalog: Catalog
   index: number
   state: MemberState
+  owners: BladeOwners
   usedBlades: Set<string>
   takenDrivers: Set<string>
   niaBladeTaken: boolean
@@ -26,7 +27,7 @@ export type MemberColumnProps = {
 
 export default function MemberColumn(props: MemberColumnProps) {
   const { t } = useI18n()
-  const { catalog, state } = props
+  const { catalog, state, owners } = props
   const [filter, setFilter] = useState<DriverFilter>(emptyFilter)
 
   useEffect(() => {
@@ -48,7 +49,7 @@ export default function MemberColumn(props: MemberColumnProps) {
       return [] as { name: string; onRole: boolean }[]
     const driver = catalog.driverByName.get(state.driver)
     const seen = new Map<string, boolean>()
-    for (const blade of catalog.manualCandidates.get(state.driver) ?? []) {
+    for (const blade of catalog.manualCandidatesFor(state.driver, owners)) {
       if (!seen.has(blade.weaponName))
         seen.set(blade.weaponName, !!driver && driver.role === blade.weaponRole)
     }
@@ -59,7 +60,7 @@ export default function MemberColumn(props: MemberColumnProps) {
           return a.onRole ? -1 : 1
         return t(`weapon.${a.name}`).localeCompare(t(`weapon.${b.name}`), undefined, { sensitivity: 'base' })
       })
-  }, [catalog, state.driver, t])
+  }, [catalog, state.driver, owners, t])
 
   const setDriver = (driver: string) => {
     const info = catalog.driverByName.get(driver)
@@ -158,7 +159,7 @@ export default function MemberColumn(props: MemberColumnProps) {
           )
         }
         const driverName = state.driver
-        const options = (catalog.manualCandidates.get(driverName) ?? []).filter(b => {
+        const options = catalog.manualCandidatesFor(driverName, owners).filter(b => {
           if (b.name === selected)
             return true
           if (catalog.isFixed(driverName, b.name))

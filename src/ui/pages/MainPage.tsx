@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from "react"
-import { Button, Checkbox, CircularProgress, FormControlLabel, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material"
+import { Button, Checkbox, CircularProgress, FormControlLabel, Tab, Tabs, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material"
 import DB from "../../model/db"
 import { hasNiaBlade, hasNiaDriver, solve, usedBladeSet } from "../../model/solver"
+import { readOwners, sanitizeMembers, storeOwners } from "../../model/owners"
 import type { Catalog, Language, MemberState, TeamResult } from "../../types/common"
-import { I18nProvider, LANGUAGES, readStoredLanguage, storeLanguage, useI18n } from "../i18n/LanguageContext"
+import { LANGUAGES, useI18n } from "../i18n/LanguageContext"
 import MemberColumn from "../components/MemberColumn"
 import ResultList from "../components/ResultList"
+import AssignPage from "./AssignPage"
 
 const emptyMember = (): MemberState => ({ driver: null, blades: [null, null, null] })
 
 export default function MainPage() {
   const [catalog, setCatalog] = useState<Catalog | undefined>(undefined)
-  const [lang, setLang] = useState<Language>(readStoredLanguage)
   const [error, setError] = useState<string | undefined>(undefined)
 
   useEffect(() => {
@@ -20,26 +21,19 @@ export default function MainPage() {
       .catch(err => setError(err instanceof Error ? err.message : String(err)))
   }, [])
 
-  const changeLang = (next: Language) => {
-    storeLanguage(next)
-    setLang(next)
-  }
-
   if (error)
     return <div className="p-6 text-red-700">{error}</div>
   if (!catalog)
     return <div className="flex min-h-screen items-center justify-center"><CircularProgress /></div>
 
-  return (
-    <I18nProvider catalog={catalog} lang={lang} setLang={changeLang}>
-      <TeamBuilder catalog={catalog} />
-    </I18nProvider>
-  )
+  return <AppShell catalog={catalog} />
 }
 
-function TeamBuilder(props: { catalog: Catalog }) {
+function AppShell(props: { catalog: Catalog }) {
   const { catalog } = props
   const { t, lang, setLang } = useI18n()
+  const [tab, setTab] = useState(0)
+  const [owners, setOwners] = useState<Map<string, string>>(() => readOwners(catalog))
   const [members, setMembers] = useState<MemberState[]>([emptyMember(), emptyMember(), emptyMember()])
   const [redundancy, setRedundancy] = useState(false)
   const [results, setResults] = useState<TeamResult[] | undefined>(undefined)
@@ -59,13 +53,20 @@ function TeamBuilder(props: { catalog: Catalog }) {
     setResults(undefined)
   }
 
+  const updateOwners = (next: Map<string, string>) => {
+    storeOwners(next)
+    setOwners(next)
+    setMembers(ori => sanitizeMembers(catalog, ori, next))
+    setResults(undefined)
+  }
+
   const runCalculate = () => {
     if (!canCalculate)
       return
     setCalculating(true)
     setResults(undefined)
     window.setTimeout(() => {
-      const found = solve(catalog, members, redundancy)
+      const found = solve(catalog, members, redundancy, owners)
       setResults(found)
       setCalculating(false)
     }, 0)
@@ -90,53 +91,70 @@ function TeamBuilder(props: { catalog: Catalog }) {
         </ToggleButtonGroup>
       </header>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={redundancy}
-              onChange={event => {
-                setRedundancy(event.target.checked)
-                setResults(undefined)
-              }}
+      <Tabs
+        value={tab}
+        onChange={(_event, value: number) => setTab(value)}
+      >
+        <Tab label={t('ui.tabTeam')} />
+        <Tab label={t('ui.tabAssign')} />
+      </Tabs>
+
+      {tab === 0 && (
+        <>
+          <div className="flex flex-wrap items-center gap-3">
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={redundancy}
+                  onChange={event => {
+                    setRedundancy(event.target.checked)
+                    setResults(undefined)
+                  }}
+                />
+              }
+              label={t('ui.redundancy')}
             />
-          }
-          label={t('ui.redundancy')}
-        />
-        <Button
-          variant="contained"
-          onClick={runCalculate}
-          disabled={!canCalculate || calculating}
-        >
-          {t('ui.calculate')}
-        </Button>
-        {!canCalculate && (
-          <Typography variant="body2" color="text.secondary">{t('ui.selectDrivers')}</Typography>
-        )}
-        {calculating && <CircularProgress size={22} />}
-      </div>
+            <Button
+              variant="contained"
+              onClick={runCalculate}
+              disabled={!canCalculate || calculating}
+            >
+              {t('ui.calculate')}
+            </Button>
+            {!canCalculate && (
+              <Typography variant="body2" color="text.secondary">{t('ui.selectDrivers')}</Typography>
+            )}
+            {calculating && <CircularProgress size={22} />}
+          </div>
 
-      <div className="flex flex-col gap-3 md:flex-row">
-        {members.map((member, index) => (
-          <MemberColumn
-            key={index}
-            catalog={catalog}
-            index={index}
-            state={member}
-            usedBlades={usedBlades}
-            takenDrivers={takenDrivers}
-            niaBladeTaken={niaBladeTaken}
-            niaDriverTaken={niaDriverTaken}
-            onChange={next => updateMember(index, next)}
-          />
-        ))}
-      </div>
+          <div className="flex flex-col gap-3 md:flex-row">
+            {members.map((member, index) => (
+              <MemberColumn
+                key={index}
+                catalog={catalog}
+                index={index}
+                state={member}
+                owners={owners}
+                usedBlades={usedBlades}
+                takenDrivers={takenDrivers}
+                niaBladeTaken={niaBladeTaken}
+                niaDriverTaken={niaDriverTaken}
+                onChange={next => updateMember(index, next)}
+              />
+            ))}
+          </div>
 
-      <section className="flex flex-col gap-2">
-        <Typography variant="h6">{t('ui.results')}</Typography>
-        {calculating && <Typography color="text.secondary">{t('ui.loading')}</Typography>}
-        {results && <ResultList catalog={catalog} results={results} />}
-      </section>
+          <section className="flex flex-col gap-2">
+            <Typography variant="h6">{t('ui.results')}</Typography>
+            {calculating && <Typography color="text.secondary">{t('ui.loading')}</Typography>}
+            {results && <ResultList catalog={catalog} results={results} />}
+          </section>
+        </>
+      )}
+
+      {tab === 1 && (
+        <AssignPage catalog={catalog} owners={owners} onChange={updateOwners} />
+      )}
     </div>
   )
 }

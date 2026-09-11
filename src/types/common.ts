@@ -3,6 +3,7 @@ export type ValueOf<T> = T[keyof T]
 export type Language = 'ja' | 'en' | 'zh-tw'
 export type BladeSource = 'FIXED' | 'BINDED' | 'FREE'
 export type SlotName = string | null
+export type BladeOwners = ReadonlyMap<string, string>
 
 export type MemberState = {
   driver: string | null
@@ -24,6 +25,7 @@ export type DriverInfo = {
   name: string
   role: string
   fixedBlades: string[]
+  canUseForeign: boolean
 }
 
 export type TeamMember = {
@@ -48,14 +50,19 @@ export type Catalog = {
   effectIndex: Map<string, number>
   effectsByDriverWeapon: Map<string, string[]>
   bindsByBlade: Map<string, { driver: string; isFixed: boolean }[]>
+  excludeByBlade: Map<string, Set<string>>
+  foreignBlocked: Set<string>
   sourceOf: (driver: string, blade: string) => BladeSource | null
-  isEligible: (driver: string, blade: string) => boolean
+  bladeSource: (blade: string) => BladeSource
+  dedicatedDrivers: (blade: string) => string[]
+  assignableDrivers: (blade: string) => string[]
+  isAssignmentLocked: (blade: string) => boolean
+  isEligible: (driver: string, blade: string, owners?: BladeOwners) => boolean
   isOnRole: (driver: string, blade: string) => boolean
   isFixed: (driver: string, blade: string) => boolean
   effectsOf: (driver: string, blade: string) => string[]
   effectMaskOf: (driver: string, blade: string) => number
-  manualCandidates: Map<string, BladeInfo[]>
-  solverCandidates: Map<string, BladeInfo[]>
-  translations: Map<string, Record<Language, string>>
+  manualCandidatesFor: (driver: string, owners: BladeOwners) => BladeInfo[]
+  solverCandidatesFor: (driver: string, owners: BladeOwners) => BladeInfo[]
   allElementsMask: number
 }
