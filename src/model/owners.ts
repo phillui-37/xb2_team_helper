@@ -1,47 +1,59 @@
+import { Effect, Option, Schema, pipe } from "effect"
 import type { BladeOwners, Catalog, MemberState, SlotName } from "../types/common"
+import { OwnersJsonSchema } from "./data/rowSchema"
 
 const STORAGE_KEY = 'xb2-blade-owners'
 
-export function emptyOwners(): Map<string, string> {
-  return new Map()
-}
+export const emptyOwners = (): Map<string, string> => new Map()
 
-export function readOwners(catalog: Catalog): Map<string, string> {
-  const owners = emptyOwners()
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw)
-      return owners
-    const parsed = JSON.parse(raw) as unknown
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
-      return owners
-    for (const [blade, driver] of Object.entries(parsed as Record<string, unknown>)) {
-      if (typeof driver !== 'string')
-        continue
-      if (catalog.isAssignmentLocked(blade))
-        continue
-      if (!catalog.bladeByName.has(blade) || !catalog.driverByName.has(driver))
-        continue
-      if (!catalog.assignableDrivers(blade).includes(driver))
-        continue
-      owners.set(blade, driver)
-    }
-  } catch {
-    // ignore bad storage
-  }
-  return owners
-}
+const parseOwnersJson = (raw: string): Effect.Effect<Record<string, string>> =>
+  pipe(
+    Effect.try(() => JSON.parse(raw) as unknown),
+    Effect.flatMap(unknown =>
+      Effect.try({
+        try: () => Schema.decodeUnknownSync(OwnersJsonSchema)(unknown),
+        catch: () => new Error("owners-schema"),
+      }),
+    ),
+    Effect.orElseSucceed(() => ({}) as Record<string, string>),
+  )
 
-export function storeOwners(owners: BladeOwners) {
-  try {
+const acceptOwner = (catalog: Catalog, blade: string, driver: string): boolean =>
+  !catalog.isAssignmentLocked(blade)
+  && catalog.bladeByName.has(blade)
+  && catalog.driverByName.has(driver)
+  && catalog.assignableDrivers(blade).includes(driver)
+
+export const readOwners = (catalog: Catalog): Map<string, string> =>
+  pipe(
+    Effect.sync(() => Option.fromNullishOr(localStorage.getItem(STORAGE_KEY))),
+    Effect.flatMap(Option.match({
+      onNone: () => Effect.succeed({} as Record<string, string>),
+      onSome: parseOwnersJson,
+    })),
+    Effect.map(decoded => {
+      const owners = emptyOwners()
+      for (const [blade, driver] of Object.entries(decoded)) {
+        if (acceptOwner(catalog, blade, driver))
+          owners.set(blade, driver)
+      }
+      return owners
+    }),
+    Effect.runSync,
+  )
+
+export const storeOwners = (owners: BladeOwners): void => {
+  Effect.runSync(Effect.ignore(Effect.try(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(Object.fromEntries(owners)))
-  } catch {
-    // ignore
-  }
+  })))
 }
 
-export function sanitizeMembers(catalog: Catalog, members: MemberState[], owners: BladeOwners): MemberState[] {
-  return members.map(member => {
+export const sanitizeMembers = (
+  catalog: Catalog,
+  members: MemberState[],
+  owners: BladeOwners,
+): MemberState[] =>
+  members.map(member => {
     if (!member.driver)
       return member
     const driver = member.driver
@@ -54,4 +66,3 @@ export function sanitizeMembers(catalog: Catalog, members: MemberState[], owners
     }) as [SlotName, SlotName, SlotName]
     return { driver, blades }
   })
-}
