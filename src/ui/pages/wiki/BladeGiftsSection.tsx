@@ -51,12 +51,13 @@ export default function BladeGiftsSection(props: { catalog: Catalog }) {
 
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-start">
-      <aside className="order-1 md:order-2 md:sticky md:top-4 md:w-80 md:shrink-0 lg:w-96">
+      <aside className="order-1 w-full md:order-2 md:sticky md:top-4 md:w-80 md:shrink-0 lg:w-96">
         <Accordion
           disableGutters
           elevation={0}
           expanded={legendOpen}
           onChange={(_event, expanded) => setLegendOpen(expanded)}
+          className="w-full"
           sx={{
             border: '1px solid',
             borderColor: 'divider',
