@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
-import { Chip, TextField, Typography } from "@mui/material"
+import { ExpandMore } from "@mui/icons-material"
+import { Accordion, AccordionDetails, AccordionSummary, Chip, TextField, Typography } from "@mui/material"
 import type { Catalog, CharacterGift } from "../../../types/common"
 import { fuzzyMatch } from "../../misc/search"
 import { useI18n } from "../../i18n/LanguageContext"
@@ -24,6 +25,7 @@ export default function BladeGiftsSection(props: { catalog: Catalog }) {
   const [driver, setDriver] = useState<string | null>(null)
   const [buff, setBuff] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  const [legendOpen, setLegendOpen] = useState(true)
 
   const gifts = useMemo(() => catalog.characterGifts.filter(gift => {
     const ownerSelected = blade || driver
@@ -48,94 +50,116 @@ export default function BladeGiftsSection(props: { catalog: Catalog }) {
   }), [catalog, blade, driver, buff, query, t])
 
   return (
-    <div className="flex flex-col gap-4">
-      <Typography variant="body2" color="text.secondary">{t('ui.favoriteBonus')}</Typography>
-      <div className="grid gap-2 md:grid-cols-2">
-        {catalog.pouchBuffs.map(item => (
-          <div key={item.key} className="rounded-lg border border-gray-200 p-3">
-            <Typography variant="subtitle2">{t(`pouch.buff.${item.key}`)}</Typography>
-            <Typography variant="body2" color="text.secondary">{t(`pouch.buffDesc.${item.key}`)}</Typography>
-            <div className="mt-1 flex flex-wrap gap-1">
-              {item.categoryNames.map(name => (
-                <Chip key={name} size="small" variant="outlined" label={t(`pouch.category.${name}`)} />
+    <div className="flex flex-col gap-4 md:flex-row md:items-start">
+      <aside className="order-1 md:order-2 md:sticky md:top-4 md:w-80 md:shrink-0 lg:w-96">
+        <Accordion
+          disableGutters
+          elevation={0}
+          expanded={legendOpen}
+          onChange={(_event, expanded) => setLegendOpen(expanded)}
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: '8px !important',
+            '&:before': { display: 'none' },
+          }}
+        >
+          <AccordionSummary expandIcon={<ExpandMore />}>
+            <Typography variant="subtitle2">{t('ui.pouchBuffLegend')}</Typography>
+          </AccordionSummary>
+          <AccordionDetails className="flex max-h-[70vh] flex-col gap-2 overflow-y-auto md:max-h-[calc(100vh-8rem)]">
+            <Typography variant="body2" color="text.secondary">{t('ui.favoriteBonus')}</Typography>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-1">
+              {catalog.pouchBuffs.map(item => (
+                <div key={item.key} className="rounded-lg border border-gray-200 p-3">
+                  <Typography variant="subtitle2">{t(`pouch.buff.${item.key}`)}</Typography>
+                  <Typography variant="body2" color="text.secondary">{t(`pouch.buffDesc.${item.key}`)}</Typography>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {item.categoryNames.map(name => (
+                      <Chip key={name} size="small" variant="outlined" label={t(`pouch.category.${name}`)} />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
-          </div>
-        ))}
-      </div>
-      <div className="grid gap-3 md:grid-cols-4">
-        <WikiAutocomplete
-          label={t('ui.blade')}
-          value={blade}
-          options={catalog.blades.map(item => item.name)}
-          optionKey={name => `blade.${name}`}
-          onChange={setBlade}
-        />
-        <WikiAutocomplete
-          label={t('ui.driver')}
-          value={driver}
-          options={catalog.drivers.map(item => item.name)}
-          optionKey={name => `driver.${name}`}
-          onChange={setDriver}
-        />
-        <WikiAutocomplete
-          label={t('ui.pouchBuff')}
-          value={buff}
-          options={catalog.pouchBuffs.map(item => item.key)}
-          optionKey={name => `pouch.buff.${name}`}
-          onChange={setBuff}
-        />
-        <TextField
-          size="small"
-          label={t('ui.searchWiki')}
-          value={query}
-          onChange={event => setQuery(event.target.value)}
-        />
-      </div>
-      {gifts.length === 0 ? (
-        <Typography color="text.secondary">{t('ui.wikiNoMatches')}</Typography>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {gifts.map(gift => (
-            <div key={gift.id} className="flex flex-col gap-2 rounded-lg border border-gray-200 p-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <Typography variant="subtitle2">
-                  {t(`${gift.ownerType}.${gift.ownerName}`)}
-                  {gift.persona ? ` (${t(`persona.${gift.persona}`)})` : ''}
-                </Typography>
-                <Chip
-                  size="small"
-                  label={t(gift.ownerType === 'driver' ? 'ui.ownerTypeDriver' : 'ui.ownerTypeBlade')}
-                />
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {gift.categories.map(name => {
-                  const category = catalog.pouchCategories.find(c => c.name === name)
-                  return (
-                    <Chip
-                      key={name}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                      label={`${t(`pouch.category.${name}`)} · ${t(`pouch.buff.${category?.buffKey ?? ''}`)}`}
-                    />
-                  )
-                })}
-              </div>
-              <div className="flex flex-wrap gap-1">
-                {gift.items.map(item => (
-                  <Chip
-                    key={item.name}
-                    size="small"
-                    variant="outlined"
-                    label={`${t(`pouch.item.${item.name}`)} (${t(`pouch.category.${item.category}`)})`}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
+          </AccordionDetails>
+        </Accordion>
+      </aside>
+      <div className="order-2 flex min-w-0 flex-1 flex-col gap-4 md:order-1">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <WikiAutocomplete
+            label={t('ui.blade')}
+            value={blade}
+            options={catalog.blades.map(item => item.name)}
+            optionKey={name => `blade.${name}`}
+            onChange={setBlade}
+          />
+          <WikiAutocomplete
+            label={t('ui.driver')}
+            value={driver}
+            options={catalog.drivers.map(item => item.name)}
+            optionKey={name => `driver.${name}`}
+            onChange={setDriver}
+          />
+          <WikiAutocomplete
+            label={t('ui.pouchBuff')}
+            value={buff}
+            options={catalog.pouchBuffs.map(item => item.key)}
+            optionKey={name => `pouch.buff.${name}`}
+            onChange={setBuff}
+          />
+          <TextField
+            size="small"
+            label={t('ui.searchWiki')}
+            value={query}
+            onChange={event => setQuery(event.target.value)}
+          />
         </div>
-      )}
+        {gifts.length === 0 ? (
+          <Typography color="text.secondary">{t('ui.wikiNoMatches')}</Typography>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {gifts.map(gift => (
+              <div key={gift.id} className="flex flex-col gap-2 rounded-lg border border-gray-200 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Typography variant="subtitle2">
+                    {t(`${gift.ownerType}.${gift.ownerName}`)}
+                    {gift.persona ? ` (${t(`persona.${gift.persona}`)})` : ''}
+                  </Typography>
+                  <Chip
+                    size="small"
+                    label={t(gift.ownerType === 'driver' ? 'ui.ownerTypeDriver' : 'ui.ownerTypeBlade')}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {gift.categories.map(name => {
+                    const category = catalog.pouchCategories.find(c => c.name === name)
+                    return (
+                      <Chip
+                        key={name}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                        label={`${t(`pouch.category.${name}`)} · ${t(`pouch.buff.${category?.buffKey ?? ''}`)}`}
+                      />
+                    )
+                  })}
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {gift.items.map(item => (
+                    <Chip
+                      key={item.name}
+                      size="small"
+                      variant="outlined"
+                      label={`${t(`pouch.item.${item.name}`)} (${t(`pouch.category.${item.category}`)})`}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
