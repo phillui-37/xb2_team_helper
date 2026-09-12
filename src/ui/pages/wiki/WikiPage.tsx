@@ -4,10 +4,12 @@ import type { Catalog } from "../../../types/common"
 import { useI18n } from "../../i18n/LanguageContext"
 import { WIKI_SECTIONS, type WikiSectionId } from "./sections"
 
+const DEFAULT_SECTION = WIKI_SECTIONS[0]!
+
 export default function WikiPage(props: { catalog: Catalog }) {
   const { t } = useI18n()
-  const [section, setSection] = useState<WikiSectionId>(WIKI_SECTIONS[0].id)
-  const active = WIKI_SECTIONS.find(item => item.id === section) ?? WIKI_SECTIONS[0]
+  const [section, setSection] = useState<WikiSectionId>(DEFAULT_SECTION.id)
+  const active = WIKI_SECTIONS.find(item => item.id === section) ?? DEFAULT_SECTION
   const Page = active.Page
 
   return (

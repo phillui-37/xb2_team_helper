@@ -1,5 +1,3 @@
-export type Opt<T> = T | undefined
-export type ValueOf<T> = T[keyof T]
 export type Language = 'ja' | 'en' | 'zh-tw'
 export type BladeSource = 'FIXED' | 'BINDED' | 'FREE'
 export type SlotName = string | null
@@ -86,10 +84,6 @@ export type Catalog = {
   pouchCategories: PouchCategory[]
   pouchBuffs: PouchBuff[]
   characterGifts: CharacterGift[]
-  bindsByBlade: Map<string, { driver: string; isFixed: boolean }[]>
-  excludeByBlade: Map<string, Set<string>>
-  foreignBlocked: Set<string>
-  sourceOf: (driver: string, blade: string) => BladeSource | null
   bladeSource: (blade: string) => BladeSource
   dedicatedDrivers: (blade: string) => string[]
   assignableDrivers: (blade: string) => string[]
@@ -98,7 +92,6 @@ export type Catalog = {
   isOnRole: (driver: string, blade: string) => boolean
   isFixed: (driver: string, blade: string) => boolean
   effectsOf: (driver: string, blade: string) => string[]
-  effectMaskOf: (driver: string, blade: string) => number
   manualCandidatesFor: (driver: string, owners: BladeOwners) => BladeInfo[]
   solverCandidatesFor: (driver: string, owners: BladeOwners) => BladeInfo[]
   allElementsMask: number

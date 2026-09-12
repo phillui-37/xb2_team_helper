@@ -2,6 +2,7 @@ import { useMemo, useState } from "react"
 import { Chip, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material"
 import type { Catalog } from "../../types/common"
 import { useI18n } from "../i18n/LanguageContext"
+import { fuzzyFilterOptions } from "../misc/search"
 
 export default function AssignPage(props: {
   catalog: Catalog
@@ -13,15 +14,10 @@ export default function AssignPage(props: {
   const [query, setQuery] = useState('')
 
   const blades = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return catalog.blades.slice().sort((a, b) =>
+    const sorted = catalog.blades.slice().sort((a, b) =>
       t(`blade.${a.name}`).localeCompare(t(`blade.${b.name}`), undefined, { sensitivity: 'base' }),
-    ).filter(blade => {
-      if (!q)
-        return true
-      const name = t(`blade.${blade.name}`).toLowerCase()
-      return name.includes(q) || blade.name.toLowerCase().includes(q)
-    })
+    )
+    return fuzzyFilterOptions(sorted, query, blade => [`blade.${blade.name}`])
   }, [catalog, query, t])
 
   const setOwner = (blade: string, driver: string) => {

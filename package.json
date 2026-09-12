@@ -1,14 +1,13 @@
 {
-  "name": "ts-effect-react-test",
-  "version": "1.0.0",
-  "description": "",
-  "main": "dist/main.js",
+  "name": "xb2-team-helper",
+  "version": "1.1.0",
+  "description": "Xenoblade 2 team calculator (static /xb2/ deploy)",
   "scripts": {
     "dev": "npx vite",
     "build": "npx vite build",
     "preview": "npx vite preview"
   },
-  "keywords": [],
+  "keywords": ["xenoblade2", "team-builder"],
   "author": "",
   "license": "ISC",
   "type": "module",
