@@ -1,5 +1,17 @@
 import { PGlite } from "@electric-sql/pglite"
 import initSql from "../db/init_db.sql?raw"
+import pouchGiftsSql from "../db/pouch_gifts.sql?raw"
+import getDriversSql from "../db/get_drivers.sql?raw"
+import getBladesSql from "../db/get_blades.sql?raw"
+import getBindsSql from "../db/get_binds.sql?raw"
+import getDriverWeaponEffectsSql from "../db/get_driver_weapon_effects.sql?raw"
+import getBladeDriverExcludesSql from "../db/get_blade_driver_excludes.sql?raw"
+import getForeignBlockedBladesSql from "../db/get_foreign_blocked_blades.sql?raw"
+import getWeaponsSql from "../db/get_weapons.sql?raw"
+import getElementChainsSql from "../db/get_element_chains.sql?raw"
+import getPouchCategoriesSql from "../db/get_pouch_categories.sql?raw"
+import getFavoriteCategoriesSql from "../db/get_favorite_categories.sql?raw"
+import getFavoriteItemsSql from "../db/get_favorite_items.sql?raw"
 import type { Catalog } from "../types/common"
 import { buildCatalog } from "./catalog"
 
@@ -15,6 +27,25 @@ type BladeRow = {
 type BindRow = { blade: string; driver: string; is_fixed: boolean }
 type EffectRow = { driver: string; weapon: string; effect: string }
 type ExcludeRow = { blade: string; driver: string }
+type WeaponRow = { name: string; role: string }
+type ChainRow = { element1: string; element2: string; element3: string }
+type PouchCategoryRow = { name: string; buff_key: string }
+type FavoriteCategoryRow = {
+  owner_type: 'driver' | 'blade'
+  owner_name: string
+  persona: string
+  category: string
+  buff_key: string
+  sort_order: number
+}
+type FavoriteItemRow = {
+  owner_type: 'driver' | 'blade'
+  owner_name: string
+  persona: string
+  item: string
+  category: string
+  sort_order: number
+}
 
 export default class DB {
   private static instance: DB | undefined
@@ -30,59 +61,25 @@ export default class DB {
 
   private constructor() {
     this.db = new PGlite()
-    this.ready = this.db.exec(initSql).then(() => undefined)
+    this.ready = this.db.exec(initSql).then(() => this.db.exec(pouchGiftsSql)).then(() => undefined)
   }
 
   async getCatalog(): Promise<Catalog> {
     if (this.catalog)
       return this.catalog
     await this.ready
-    const [drivers, blades, binds, effects, excludes, foreignBlocked] = await Promise.all([
-      this.db.query<DriverRow>(`
-        SELECT d.id, d.name, r.name AS role, d.can_use_foreign
-        FROM driver d
-        JOIN role r ON r.id = d.role_id
-        ORDER BY d.id
-      `),
-      this.db.query<BladeRow>(`
-        SELECT
-          b.id,
-          b.name,
-          w.name AS weapon,
-          wr.name AS weapon_role,
-          e1.name AS element1,
-          e2.name AS element2
-        FROM blade b
-        JOIN weapon w ON w.id = b.weapon_id
-        JOIN role wr ON wr.id = w.role_id
-        JOIN element e1 ON e1.id = b.element1_id
-        LEFT JOIN element e2 ON e2.id = b.element2_id
-        ORDER BY b.id
-      `),
-      this.db.query<BindRow>(`
-        SELECT b.name AS blade, d.name AS driver, bbd.is_fixed
-        FROM blade_bind_driver bbd
-        JOIN blade b ON b.id = bbd.blade_id
-        JOIN driver d ON d.id = bbd.driver_id
-      `),
-      this.db.query<EffectRow>(`
-        SELECT d.name AS driver, w.name AS weapon, e.name AS effect
-        FROM driver_weapon_effect dwe
-        JOIN driver d ON d.id = dwe.driver_id
-        JOIN weapon w ON w.id = dwe.weapon_id
-        JOIN effect e ON e.id = dwe.effect_id
-      `),
-      this.db.query<ExcludeRow>(`
-        SELECT b.name AS blade, d.name AS driver
-        FROM blade_driver_exclude bde
-        JOIN blade b ON b.id = bde.blade_id
-        JOIN driver d ON d.id = bde.driver_id
-      `),
-      this.db.query<{ blade: string }>(`
-        SELECT b.name AS blade
-        FROM foreign_blade_exclude fbe
-        JOIN blade b ON b.id = fbe.blade_id
-      `),
+    const [drivers, blades, binds, effects, excludes, foreignBlocked, weapons, elementChains, pouchCategories, favoriteCategories, favoriteItems] = await Promise.all([
+      this.db.query<DriverRow>(getDriversSql),
+      this.db.query<BladeRow>(getBladesSql),
+      this.db.query<BindRow>(getBindsSql),
+      this.db.query<EffectRow>(getDriverWeaponEffectsSql),
+      this.db.query<ExcludeRow>(getBladeDriverExcludesSql),
+      this.db.query<{ blade: string }>(getForeignBlockedBladesSql),
+      this.db.query<WeaponRow>(getWeaponsSql),
+      this.db.query<ChainRow>(getElementChainsSql),
+      this.db.query<PouchCategoryRow>(getPouchCategoriesSql),
+      this.db.query<FavoriteCategoryRow>(getFavoriteCategoriesSql),
+      this.db.query<FavoriteItemRow>(getFavoriteItemsSql),
     ])
     this.catalog = buildCatalog({
       drivers: drivers.rows,
@@ -91,6 +88,11 @@ export default class DB {
       effects: effects.rows,
       excludes: excludes.rows,
       foreignBlocked: foreignBlocked.rows.map(r => r.blade),
+      weapons: weapons.rows,
+      elementChains: elementChains.rows,
+      pouchCategories: pouchCategories.rows,
+      favoriteCategories: favoriteCategories.rows,
+      favoriteItems: favoriteItems.rows,
     })
     return this.catalog
   }

@@ -8,6 +8,7 @@ import { LANGUAGES, useI18n } from "../i18n/LanguageContext"
 import MemberColumn from "../components/MemberColumn"
 import ResultList from "../components/ResultList"
 import AssignPage from "./AssignPage"
+import WikiPage from "./wiki/WikiPage"
 
 const emptyMember = (): MemberState => ({ driver: null, blades: [null, null, null] })
 
@@ -97,6 +98,7 @@ function AppShell(props: { catalog: Catalog }) {
       >
         <Tab label={t('ui.tabTeam')} />
         <Tab label={t('ui.tabAssign')} />
+        <Tab label={t('ui.tabWiki')} />
       </Tabs>
 
       {tab === 0 && (
@@ -154,6 +156,10 @@ function AppShell(props: { catalog: Catalog }) {
 
       {tab === 1 && (
         <AssignPage catalog={catalog} owners={owners} onChange={updateOwners} />
+      )}
+
+      {tab === 2 && (
+        <WikiPage catalog={catalog} />
       )}
     </div>
   )

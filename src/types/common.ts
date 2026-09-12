@@ -39,16 +39,53 @@ export type TeamResult = {
   effectCounts: [number, number, number, number]
 }
 
+export type WeaponInfo = {
+  name: string
+  role: string
+}
+
+export type GiftOwnerType = 'driver' | 'blade'
+
+export type PouchCategory = {
+  name: string
+  buffKey: string
+}
+
+export type PouchBuff = {
+  key: string
+  categoryNames: string[]
+}
+
+export type GiftItem = {
+  name: string
+  category: string
+}
+
+export type CharacterGift = {
+  id: string
+  ownerType: GiftOwnerType
+  ownerName: string
+  persona: string | null
+  categories: string[]
+  items: GiftItem[]
+  buffKeys: string[]
+}
+
 export type Catalog = {
   drivers: DriverInfo[]
   blades: BladeInfo[]
+  weapons: WeaponInfo[]
   bladeByName: Map<string, BladeInfo>
   driverByName: Map<string, DriverInfo>
   elements: string[]
   effects: string[]
+  elementChains: [string, string, string][]
   elementIndex: Map<string, number>
   effectIndex: Map<string, number>
   effectsByDriverWeapon: Map<string, string[]>
+  pouchCategories: PouchCategory[]
+  pouchBuffs: PouchBuff[]
+  characterGifts: CharacterGift[]
   bindsByBlade: Map<string, { driver: string; isFixed: boolean }[]>
   excludeByBlade: Map<string, Set<string>>
   foreignBlocked: Set<string>
