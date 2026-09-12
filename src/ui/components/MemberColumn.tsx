@@ -191,10 +191,7 @@ export default function MemberColumn(props: MemberColumnProps) {
                   renderValue={value => {
                     if (!value)
                       return t('ui.empty')
-                    const info = catalog.bladeByName.get(value)
-                    if (!info)
-                      return t(`blade.${value}`)
-                    return bladeSelectSummary(t, info, !catalog.isOnRole(driverName, info.name))
+                    return t(`blade.${value}`)
                   }}
                 >
                   <MenuItem value="">{t('ui.empty')}</MenuItem>
@@ -242,11 +239,6 @@ function bladeSelectDetails(t: Translate, blade: BladeInfo, offRole: boolean): s
   if (offRole)
     parts.push(t('ui.offRole'))
   return parts.join(' · ')
-}
-
-function bladeSelectSummary(t: Translate, blade: BladeInfo, offRole: boolean): string {
-  const details = bladeSelectDetails(t, blade, offRole)
-  return details ? `${t(`blade.${blade.name}`)} · ${details}` : t(`blade.${blade.name}`)
 }
 
 function matchesFilter(catalog: Catalog, driver: string, blade: BladeInfo, filter: DriverFilter): boolean {
