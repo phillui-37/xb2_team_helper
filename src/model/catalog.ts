@@ -11,6 +11,7 @@ import type {
   PouchCategoryRow,
   WeaponRow,
 } from "../types/dbRows"
+import { manualPick, selectBlades, solverPick } from "./criteria"
 
 export function buildCatalog(raw: {
   drivers: DriverRow[]
@@ -149,12 +150,6 @@ export function buildCatalog(raw: {
     return effectsByDriverWeapon.get(`${driver}|${b.weaponName}`) ?? []
   }
 
-  const manualCandidatesFor = (driver: string, owners: BladeOwners): BladeInfo[] =>
-    blades.filter(b => isEligible(driver, b.name, owners))
-
-  const solverCandidatesFor = (driver: string, owners: BladeOwners): BladeInfo[] =>
-    manualCandidatesFor(driver, owners).filter(b => isOnRole(driver, b.name) && !isFixed(driver, b.name))
-
   const weapons: WeaponInfo[] = raw.weapons.map(w => ({ name: w.name, role: w.role }))
   const elementChains: [string, string, string][] = raw.elementChains.map(c => [c.element1, c.element2, c.element3])
   const pouchCategories: PouchCategory[] = raw.pouchCategories.map(c => ({
@@ -212,7 +207,7 @@ export function buildCatalog(raw: {
   }
   const characterGifts = [...giftMap.values()]
 
-  return {
+  const catalog: Catalog = {
     drivers,
     blades,
     weapons,
@@ -235,8 +230,11 @@ export function buildCatalog(raw: {
     isOnRole,
     isFixed,
     effectsOf,
-    manualCandidatesFor,
-    solverCandidatesFor,
+    manualCandidatesFor: (driver, owners) =>
+      selectBlades(blades, { catalog, driver, owners }, manualPick),
+    solverCandidatesFor: (driver, owners) =>
+      selectBlades(blades, { catalog, driver, owners }, solverPick),
     allElementsMask: (1 << elements.length) - 1,
   }
+  return catalog
 }

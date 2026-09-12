@@ -3,6 +3,17 @@ import { Clear } from "@mui/icons-material"
 import { Chip, FormControl, IconButton, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import type { BladeInfo, BladeOwners, Catalog, MemberState, SlotName } from "../../types/common"
 import { NIA } from "../../model/solver"
+import {
+  allowName,
+  and,
+  eligible,
+  niaBladeOk,
+  notFixed,
+  notNamed,
+  or,
+  selectBlades,
+  uiFilters,
+} from "../../model/criteria"
 import { useI18n } from "../i18n/LanguageContext"
 
 type DriverFilter = {
@@ -159,17 +170,20 @@ export default function MemberColumn(props: MemberColumnProps) {
           )
         }
         const driverName = state.driver
-        const options = catalog.manualCandidatesFor(driverName, owners).filter(b => {
-          if (b.name === selected)
-            return true
-          if (catalog.isFixed(driverName, b.name))
-            return false
-          if (props.usedBlades.has(b.name))
-            return false
-          if (b.name === NIA && props.niaDriverTaken)
-            return false
-          return matchesFilter(catalog, driverName, b, filter)
-        }).slice().sort((a, b) => {
+        const options = selectBlades(
+          catalog.blades,
+          { catalog, driver: driverName, owners },
+          or(
+            allowName(selected ?? null),
+            and(
+              eligible,
+              notFixed,
+              notNamed(props.usedBlades),
+              niaBladeOk(props.niaDriverTaken),
+              uiFilters(filter),
+            ),
+          ),
+        ).slice().sort((a, b) => {
           const aOn = catalog.isOnRole(driverName, a.name) ? 0 : 1
           const bOn = catalog.isOnRole(driverName, b.name) ? 0 : 1
           if (aOn !== bOn)
@@ -239,19 +253,6 @@ function bladeSelectDetails(t: Translate, blade: BladeInfo, offRole: boolean): s
   if (offRole)
     parts.push(t('ui.offRole'))
   return parts.join(' · ')
-}
-
-function matchesFilter(catalog: Catalog, driver: string, blade: BladeInfo, filter: DriverFilter): boolean {
-  if (filter.elements.length > 0 && !blade.elements.some(el => filter.elements.includes(el)))
-    return false
-  if (filter.weapons.length > 0 && !filter.weapons.includes(blade.weaponName))
-    return false
-  if (filter.effects.length > 0) {
-    const effects = catalog.effectsOf(driver, blade.name)
-    if (!filter.effects.some(eff => effects.includes(eff)))
-      return false
-  }
-  return true
 }
 
 function FilterSelect(props: {

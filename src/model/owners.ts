@@ -1,4 +1,6 @@
+import { Effect, Schema } from "effect"
 import type { BladeOwners, Catalog, MemberState, SlotName } from "../types/common"
+import { OwnersJsonSchema } from "./data/rowSchema"
 
 const STORAGE_KEY = 'xb2-blade-owners'
 
@@ -7,29 +9,27 @@ export function emptyOwners(): Map<string, string> {
 }
 
 export function readOwners(catalog: Catalog): Map<string, string> {
-  const owners = emptyOwners()
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw)
-      return owners
-    const parsed = JSON.parse(raw) as unknown
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed))
-      return owners
-    for (const [blade, driver] of Object.entries(parsed as Record<string, unknown>)) {
-      if (typeof driver !== 'string')
-        continue
-      if (catalog.isAssignmentLocked(blade))
-        continue
-      if (!catalog.bladeByName.has(blade) || !catalog.driverByName.has(driver))
-        continue
-      if (!catalog.assignableDrivers(blade).includes(driver))
-        continue
-      owners.set(blade, driver)
+  return Effect.runSync(Effect.sync(() => {
+    const owners = emptyOwners()
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (!raw)
+        return owners
+      const decoded = Schema.decodeUnknownSync(OwnersJsonSchema)(JSON.parse(raw))
+      for (const [blade, driver] of Object.entries(decoded)) {
+        if (catalog.isAssignmentLocked(blade))
+          continue
+        if (!catalog.bladeByName.has(blade) || !catalog.driverByName.has(driver))
+          continue
+        if (!catalog.assignableDrivers(blade).includes(driver))
+          continue
+        owners.set(blade, driver)
+      }
+    } catch {
+      // corrupt storage → empty map
     }
-  } catch {
-    // ignore bad storage
-  }
-  return owners
+    return owners
+  }))
 }
 
 export function storeOwners(owners: BladeOwners) {
