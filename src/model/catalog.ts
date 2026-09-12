@@ -134,18 +134,6 @@ export function buildCatalog(raw: {
     return !!binds?.some(b => b.driver === driver && b.isFixed)
   }
 
-  const sourceOf = (driver: string, blade: string): BladeSource | null => {
-    if (!isEligible(driver, blade))
-      return null
-    const binds = bindsByBlade.get(blade)
-    if (!binds)
-      return 'FREE'
-    const bind = binds.find(b => b.driver === driver)
-    if (!bind)
-      return null
-    return bind.isFixed ? 'FIXED' : 'BINDED'
-  }
-
   const isOnRole = (driver: string, blade: string): boolean => {
     const d = driverByName.get(driver)
     const b = bladeByName.get(blade)
@@ -159,16 +147,6 @@ export function buildCatalog(raw: {
     if (!b)
       return []
     return effectsByDriverWeapon.get(`${driver}|${b.weaponName}`) ?? []
-  }
-
-  const effectMaskOf = (driver: string, blade: string): number => {
-    let mask = 0
-    for (const eff of effectsOf(driver, blade)) {
-      const bit = effectIndex.get(eff)
-      if (bit !== undefined)
-        mask |= 1 << bit
-    }
-    return mask
   }
 
   const manualCandidatesFor = (driver: string, owners: BladeOwners): BladeInfo[] =>
@@ -249,10 +227,6 @@ export function buildCatalog(raw: {
     pouchCategories,
     pouchBuffs,
     characterGifts,
-    bindsByBlade,
-    excludeByBlade,
-    foreignBlocked,
-    sourceOf,
     bladeSource,
     dedicatedDrivers,
     assignableDrivers,
@@ -261,7 +235,6 @@ export function buildCatalog(raw: {
     isOnRole,
     isFixed,
     effectsOf,
-    effectMaskOf,
     manualCandidatesFor,
     solverCandidatesFor,
     allElementsMask: (1 << elements.length) - 1,
