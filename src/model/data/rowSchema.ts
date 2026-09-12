@@ -1,25 +1,13 @@
 import { Schema } from "effect"
-import type {
-  BladeRow,
-  BindRow,
-  ChainRow,
-  DriverRow,
-  EffectRow,
-  ExcludeRow,
-  FavoriteCategoryRow,
-  FavoriteItemRow,
-  PouchCategoryRow,
-  WeaponRow,
-} from "../../types/dbRows"
 
-export const DriverRowSchema: Schema.Schema<DriverRow> = Schema.Struct({
+export const DriverRowSchema = Schema.Struct({
   id: Schema.Number,
   name: Schema.String,
   role: Schema.String,
   can_use_foreign: Schema.Boolean,
 })
 
-export const BladeRowSchema: Schema.Schema<BladeRow> = Schema.Struct({
+export const BladeRowSchema = Schema.Struct({
   id: Schema.Number,
   name: Schema.String,
   weapon: Schema.String,
@@ -28,41 +16,41 @@ export const BladeRowSchema: Schema.Schema<BladeRow> = Schema.Struct({
   element2: Schema.NullOr(Schema.String),
 })
 
-export const BindRowSchema: Schema.Schema<BindRow> = Schema.Struct({
+export const BindRowSchema = Schema.Struct({
   blade: Schema.String,
   driver: Schema.String,
   is_fixed: Schema.Boolean,
 })
 
-export const EffectRowSchema: Schema.Schema<EffectRow> = Schema.Struct({
+export const EffectRowSchema = Schema.Struct({
   driver: Schema.String,
   weapon: Schema.String,
   effect: Schema.String,
 })
 
-export const ExcludeRowSchema: Schema.Schema<ExcludeRow> = Schema.Struct({
+export const ExcludeRowSchema = Schema.Struct({
   blade: Schema.String,
   driver: Schema.String,
 })
 
-export const WeaponRowSchema: Schema.Schema<WeaponRow> = Schema.Struct({
+export const WeaponRowSchema = Schema.Struct({
   name: Schema.String,
   role: Schema.String,
 })
 
-export const ChainRowSchema: Schema.Schema<ChainRow> = Schema.Struct({
+export const ChainRowSchema = Schema.Struct({
   element1: Schema.String,
   element2: Schema.String,
   element3: Schema.String,
 })
 
-export const PouchCategoryRowSchema: Schema.Schema<PouchCategoryRow> = Schema.Struct({
+export const PouchCategoryRowSchema = Schema.Struct({
   name: Schema.String,
   buff_key: Schema.String,
 })
 
-export const FavoriteCategoryRowSchema: Schema.Schema<FavoriteCategoryRow> = Schema.Struct({
-  owner_type: Schema.Literal("driver", "blade"),
+export const FavoriteCategoryRowSchema = Schema.Struct({
+  owner_type: Schema.Literals(["driver", "blade"]),
   owner_name: Schema.String,
   persona: Schema.String,
   category: Schema.String,
@@ -70,8 +58,8 @@ export const FavoriteCategoryRowSchema: Schema.Schema<FavoriteCategoryRow> = Sch
   sort_order: Schema.Number,
 })
 
-export const FavoriteItemRowSchema: Schema.Schema<FavoriteItemRow> = Schema.Struct({
-  owner_type: Schema.Literal("driver", "blade"),
+export const FavoriteItemRowSchema = Schema.Struct({
+  owner_type: Schema.Literals(["driver", "blade"]),
   owner_name: Schema.String,
   persona: Schema.String,
   item: Schema.String,
@@ -83,4 +71,6 @@ export const ForeignBlockedRowSchema = Schema.Struct({
   blade: Schema.String,
 })
 
-export const OwnersJsonSchema = Schema.Record({ key: Schema.String, value: Schema.String })
+/** v4 Record is positional: Record(keySchema, valueSchema). */
+export const OwnersJsonSchema = Schema.Record(Schema.String, Schema.String)
+

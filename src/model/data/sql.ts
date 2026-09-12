@@ -4,16 +4,18 @@ import initSql from "../../db/init_db.sql?raw"
 import pouchGiftsSql from "../../db/pouch_gifts.sql?raw"
 import { RowDecodeError, SqlQueryError, SqlSeedError } from "./errors"
 
-export class Sql extends Context.Tag("xb2/Sql")<Sql, {
+export interface SqlService {
   readonly seed: Effect.Effect<void, SqlSeedError>
-  readonly query: <A>(
+  readonly query: <S extends Schema.ConstraintDecoder<unknown>>(
     table: string,
     sql: string,
-    schema: Schema.Schema<A>,
-  ) => Effect.Effect<A[], SqlQueryError | RowDecodeError>
-}>() {}
+    schema: S,
+  ) => Effect.Effect<Array<S["Type"]>, SqlQueryError | RowDecodeError>
+}
 
-export const SqlLive = Layer.sync(Sql, () => {
+export class Sql extends Context.Service<Sql, SqlService>()("xb2/Sql") {}
+
+export const SqlLive = Layer.sync(Sql, (): SqlService => {
   const db = new PGlite()
   let seeded = false
 
@@ -28,23 +30,22 @@ export const SqlLive = Layer.sync(Sql, () => {
     catch: cause => new SqlSeedError({ cause }),
   })
 
-  const query = <A>(
+  const query = <S extends Schema.ConstraintDecoder<unknown>>(
     table: string,
     sql: string,
-    schema: Schema.Schema<A>,
-  ): Effect.Effect<A[], SqlQueryError | RowDecodeError> =>
+    schema: S,
+  ): Effect.Effect<Array<S["Type"]>, SqlQueryError | RowDecodeError> =>
     Effect.gen(function* () {
       const result = yield* Effect.tryPromise({
         try: () => db.query(sql),
         catch: cause => new SqlQueryError({ sql: table, cause }),
       })
-      const rows: A[] = []
-      for (const row of result.rows) {
-        rows.push(yield* Schema.decodeUnknown(schema)(row).pipe(
-          Effect.mapError(cause => new RowDecodeError({ table, cause })),
-        ))
-      }
-      return rows
+      return yield* Effect.forEach(result.rows, row =>
+        Effect.try({
+          try: () => Schema.decodeUnknownSync(schema)(row),
+          catch: cause => new RowDecodeError({ table, cause }),
+        }),
+      )
     })
 
   return { seed, query }

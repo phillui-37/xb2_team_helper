@@ -1,4 +1,4 @@
-import { Effect } from "effect"
+import { Array as Arr, Effect, Predicate, pipe } from "effect"
 import type { BladeInfo, BladeOwners, Catalog } from "../types/common"
 
 /** Query context for blade criteria — consumers never touch SQL. */
@@ -10,18 +10,18 @@ export type CriterionContext = {
 }
 
 /**
- * Composable LINQ-style Where predicate.
- * Combine with `and` / `or` / `not` to build richer criteria without new SQL.
+ * Labeled Predicate — Boolean algebra via Predicate.every / some / not.
+ * Combine into richer criteria without writing new SQL.
  */
 export type Criterion = {
   readonly label: string
-  readonly test: (ctx: CriterionContext) => boolean
+  readonly predicate: Predicate.Predicate<CriterionContext>
 }
 
-export const criterion = (label: string, test: (ctx: CriterionContext) => boolean): Criterion => ({
-  label,
-  test,
-})
+export const criterion = (
+  label: string,
+  predicate: Predicate.Predicate<CriterionContext>,
+): Criterion => ({ label, predicate })
 
 export const pass: Criterion = criterion("pass", () => true)
 
@@ -30,7 +30,10 @@ export const and = (...xs: Criterion[]): Criterion => {
     return pass
   if (xs.length === 1)
     return xs[0]!
-  return criterion(`and(${xs.map(c => c.label).join(", ")})`, ctx => xs.every(c => c.test(ctx)))
+  return criterion(
+    `and(${xs.map(c => c.label).join(", ")})`,
+    Predicate.every(xs.map(c => c.predicate)),
+  )
 }
 
 export const or = (...xs: Criterion[]): Criterion => {
@@ -38,13 +41,15 @@ export const or = (...xs: Criterion[]): Criterion => {
     return pass
   if (xs.length === 1)
     return xs[0]!
-  return criterion(`or(${xs.map(c => c.label).join(", ")})`, ctx => xs.some(c => c.test(ctx)))
+  return criterion(
+    `or(${xs.map(c => c.label).join(", ")})`,
+    Predicate.some(xs.map(c => c.predicate)),
+  )
 }
 
 export const not = (c: Criterion): Criterion =>
-  criterion(`not(${c.label})`, ctx => !c.test(ctx))
+  criterion(`not(${c.label})`, Predicate.not(c.predicate))
 
-/** Driver may equip this blade under ownership / bind rules. */
 export const eligible: Criterion = criterion("eligible", ctx =>
   ctx.catalog.isEligible(ctx.driver, ctx.blade.name, ctx.owners))
 
@@ -86,13 +91,10 @@ export const anyEffect = (effects: readonly string[]): Criterion =>
       return effects.some(eff => have.includes(eff))
     })
 
-/** Manual team picker base: eligible only. */
 export const manualPick: Criterion = eligible
 
-/** Solver fill base: eligible + on-role + not fixed. */
 export const solverPick: Criterion = and(eligible, onRole, notFixed)
 
-/** UI filter strip (elements / weapons / effects). */
 export const uiFilters = (filter: {
   elements: readonly string[]
   weapons: readonly string[]
@@ -100,26 +102,29 @@ export const uiFilters = (filter: {
 }): Criterion => and(anyElement(filter.elements), anyWeapon(filter.weapons), anyEffect(filter.effects))
 
 /**
- * Execute a criteria pipeline via Effect.sync for a uniform data-plane boundary
- * (logging / tracing can hook here later without touching views).
+ * List-in-Effect query monad: `fromBlades ▹ where ▹ run`.
+ * Keeps a uniform Effect boundary for logging/tracing; views stay sync consumers.
  */
+export type BladeQuery = Effect.Effect<ReadonlyArray<BladeInfo>>
+
+export const fromBlades = (blades: readonly BladeInfo[]): BladeQuery =>
+  Effect.succeed(blades)
+
+export const where =
+  (base: Omit<CriterionContext, "blade">, criteria: Criterion) =>
+  (query: BladeQuery): BladeQuery =>
+    Effect.map(query, Arr.filter(blade => criteria.predicate({ ...base, blade })))
+
 export const selectBlades = (
   blades: readonly BladeInfo[],
   base: Omit<CriterionContext, "blade">,
   criteria: Criterion,
 ): BladeInfo[] =>
-  Effect.runSync(Effect.sync(() => {
-    const out: BladeInfo[] = []
-    for (const blade of blades) {
-      if (criteria.test({ ...base, blade }))
-        out.push(blade)
-    }
-    return out
-  }))
+  pipe(fromBlades(blades), where(base, criteria), Effect.runSync) as BladeInfo[]
 
 export const matchesBlade = (
   base: Omit<CriterionContext, "blade">,
   blade: BladeInfo,
   criteria: Criterion,
 ): boolean =>
-  Effect.runSync(Effect.sync(() => criteria.test({ ...base, blade })))
+  criteria.predicate({ ...base, blade })

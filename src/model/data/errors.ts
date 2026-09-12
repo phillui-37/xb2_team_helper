@@ -18,4 +18,8 @@ export class CatalogBuildError extends Data.TaggedError("CatalogBuildError")<{
   readonly cause: unknown
 }> {}
 
-export type DataLoadError = SqlSeedError | SqlQueryError | RowDecodeError | CatalogBuildError
+export type DataLoadError =
+  | SqlSeedError
+  | SqlQueryError
+  | RowDecodeError
+  | CatalogBuildError

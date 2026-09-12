@@ -28,7 +28,7 @@ import {
 } from "./rowSchema"
 import { Sql, SqlLive } from "./sql"
 
-/** Sql source → Schema decode → Catalog projection (LINQ-style provider boundary). */
+/** Sql source → Schema decode → Catalog projection. */
 const projectCatalog = Effect.gen(function* () {
   const sql = yield* Sql
   yield* sql.seed
@@ -75,14 +75,14 @@ const projectCatalog = Effect.gen(function* () {
     }),
     catch: cause => new CatalogBuildError({ cause }),
   })
-})
+}).pipe(Effect.provide(SqlLive))
 
+/**
+ * Allocate the memo cell once; each `loadCatalog` run reuses the same inner Effect.
+ * (Effect.cached alone would re-allocate if re-suspended each call.)
+ */
 export const loadCatalog: Effect.Effect<Catalog, DataLoadError> =
-  projectCatalog.pipe(Effect.provide(SqlLive))
+  Effect.runSync(Effect.cached(projectCatalog))
 
-let cached: Promise<Catalog> | undefined
-
-export function loadCatalogPromise(): Promise<Catalog> {
-  cached ??= Effect.runPromise(loadCatalog)
-  return cached
-}
+export const loadCatalogPromise = (): Promise<Catalog> =>
+  Effect.runPromise(loadCatalog)
