@@ -1,4 +1,4 @@
-import type { BladeInfo, BladeOwners, BladeSource, Catalog, DriverInfo } from "../types/common"
+import type { BladeInfo, BladeOwners, BladeSource, Catalog, CharacterGift, DriverInfo, PouchBuff, PouchCategory, WeaponInfo } from "../types/common"
 
 type DriverRow = { id: number; name: string; role: string; can_use_foreign: boolean }
 type BladeRow = {
@@ -12,6 +12,25 @@ type BladeRow = {
 type BindRow = { blade: string; driver: string; is_fixed: boolean }
 type EffectRow = { driver: string; weapon: string; effect: string }
 type ExcludeRow = { blade: string; driver: string }
+type WeaponRow = { name: string; role: string }
+type ChainRow = { element1: string; element2: string; element3: string }
+type PouchCategoryRow = { name: string; buff_key: string }
+type FavoriteCategoryRow = {
+  owner_type: 'driver' | 'blade'
+  owner_name: string
+  persona: string
+  category: string
+  buff_key: string
+  sort_order: number
+}
+type FavoriteItemRow = {
+  owner_type: 'driver' | 'blade'
+  owner_name: string
+  persona: string
+  item: string
+  category: string
+  sort_order: number
+}
 
 export function buildCatalog(raw: {
   drivers: DriverRow[]
@@ -20,6 +39,11 @@ export function buildCatalog(raw: {
   effects: EffectRow[]
   excludes: ExcludeRow[]
   foreignBlocked: string[]
+  weapons: WeaponRow[]
+  elementChains: ChainRow[]
+  pouchCategories: PouchCategoryRow[]
+  favoriteCategories: FavoriteCategoryRow[]
+  favoriteItems: FavoriteItemRow[]
 }): Catalog {
   const elements = ['fire', 'water', 'wind', 'ice', 'electricity', 'earth', 'dark', 'light']
   const effects = ['break', 'topple', 'launch', 'smash']
@@ -173,16 +197,78 @@ export function buildCatalog(raw: {
   const solverCandidatesFor = (driver: string, owners: BladeOwners): BladeInfo[] =>
     manualCandidatesFor(driver, owners).filter(b => isOnRole(driver, b.name) && !isFixed(driver, b.name))
 
+  const weapons: WeaponInfo[] = raw.weapons.map(w => ({ name: w.name, role: w.role }))
+  const elementChains: [string, string, string][] = raw.elementChains.map(c => [c.element1, c.element2, c.element3])
+  const pouchCategories: PouchCategory[] = raw.pouchCategories.map(c => ({
+    name: c.name,
+    buffKey: c.buff_key,
+  }))
+  const pouchBuffs: PouchBuff[] = [...new Map(
+    pouchCategories.map(c => [c.buffKey, [] as string[]]),
+  ).entries()].map(([key]) => ({
+    key,
+    categoryNames: pouchCategories.filter(c => c.buffKey === key).map(c => c.name),
+  }))
+
+  const giftMap = new Map<string, CharacterGift>()
+  const giftKey = (ownerType: string, ownerName: string, persona: string) =>
+    `${ownerType}:${ownerName}:${persona}`
+
+  for (const row of raw.favoriteCategories) {
+    const id = giftKey(row.owner_type, row.owner_name, row.persona)
+    let gift = giftMap.get(id)
+    if (!gift) {
+      gift = {
+        id,
+        ownerType: row.owner_type,
+        ownerName: row.owner_name,
+        persona: row.persona || null,
+        categories: [],
+        items: [],
+        buffKeys: [],
+      }
+      giftMap.set(id, gift)
+    }
+    if (!gift.categories.includes(row.category))
+      gift.categories.push(row.category)
+    if (!gift.buffKeys.includes(row.buff_key))
+      gift.buffKeys.push(row.buff_key)
+  }
+  for (const row of raw.favoriteItems) {
+    const id = giftKey(row.owner_type, row.owner_name, row.persona)
+    let gift = giftMap.get(id)
+    if (!gift) {
+      gift = {
+        id,
+        ownerType: row.owner_type,
+        ownerName: row.owner_name,
+        persona: row.persona || null,
+        categories: [],
+        items: [],
+        buffKeys: [],
+      }
+      giftMap.set(id, gift)
+    }
+    if (!gift.items.some(item => item.name === row.item))
+      gift.items.push({ name: row.item, category: row.category })
+  }
+  const characterGifts = [...giftMap.values()]
+
   return {
     drivers,
     blades,
+    weapons,
     bladeByName,
     driverByName,
     elements,
     effects,
+    elementChains,
     elementIndex,
     effectIndex,
     effectsByDriverWeapon,
+    pouchCategories,
+    pouchBuffs,
+    characterGifts,
     bindsByBlade,
     excludeByBlade,
     foreignBlocked,

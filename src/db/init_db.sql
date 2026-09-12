@@ -417,7 +417,7 @@ from (
         ('wind', 'wind', 'electricity'),
         ('wind', 'ice', 'ice'),
         ('earth', 'fire', 'wind'),
-        ('earth', 'fire', 'earch'),
+        ('earth', 'fire', 'earth'),
         ('earth', 'earth', 'electricity'),
         ('electricity', 'fire', 'wind'),
         ('electricity', 'fire', 'ice'),
