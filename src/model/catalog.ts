@@ -1,36 +1,16 @@
 import type { BladeInfo, BladeOwners, BladeSource, Catalog, CharacterGift, DriverInfo, PouchBuff, PouchCategory, WeaponInfo } from "../types/common"
-
-type DriverRow = { id: number; name: string; role: string; can_use_foreign: boolean }
-type BladeRow = {
-  id: number
-  name: string
-  weapon: string
-  weapon_role: string
-  element1: string
-  element2: string | null
-}
-type BindRow = { blade: string; driver: string; is_fixed: boolean }
-type EffectRow = { driver: string; weapon: string; effect: string }
-type ExcludeRow = { blade: string; driver: string }
-type WeaponRow = { name: string; role: string }
-type ChainRow = { element1: string; element2: string; element3: string }
-type PouchCategoryRow = { name: string; buff_key: string }
-type FavoriteCategoryRow = {
-  owner_type: 'driver' | 'blade'
-  owner_name: string
-  persona: string
-  category: string
-  buff_key: string
-  sort_order: number
-}
-type FavoriteItemRow = {
-  owner_type: 'driver' | 'blade'
-  owner_name: string
-  persona: string
-  item: string
-  category: string
-  sort_order: number
-}
+import type {
+  BladeRow,
+  BindRow,
+  ChainRow,
+  DriverRow,
+  EffectRow,
+  ExcludeRow,
+  FavoriteCategoryRow,
+  FavoriteItemRow,
+  PouchCategoryRow,
+  WeaponRow,
+} from "../types/dbRows"
 
 export function buildCatalog(raw: {
   drivers: DriverRow[]

@@ -13,39 +13,19 @@ import getPouchCategoriesSql from "../db/get_pouch_categories.sql?raw"
 import getFavoriteCategoriesSql from "../db/get_favorite_categories.sql?raw"
 import getFavoriteItemsSql from "../db/get_favorite_items.sql?raw"
 import type { Catalog } from "../types/common"
+import type {
+  BladeRow,
+  BindRow,
+  ChainRow,
+  DriverRow,
+  EffectRow,
+  ExcludeRow,
+  FavoriteCategoryRow,
+  FavoriteItemRow,
+  PouchCategoryRow,
+  WeaponRow,
+} from "../types/dbRows"
 import { buildCatalog } from "./catalog"
-
-type DriverRow = { id: number; name: string; role: string; can_use_foreign: boolean }
-type BladeRow = {
-  id: number
-  name: string
-  weapon: string
-  weapon_role: string
-  element1: string
-  element2: string | null
-}
-type BindRow = { blade: string; driver: string; is_fixed: boolean }
-type EffectRow = { driver: string; weapon: string; effect: string }
-type ExcludeRow = { blade: string; driver: string }
-type WeaponRow = { name: string; role: string }
-type ChainRow = { element1: string; element2: string; element3: string }
-type PouchCategoryRow = { name: string; buff_key: string }
-type FavoriteCategoryRow = {
-  owner_type: 'driver' | 'blade'
-  owner_name: string
-  persona: string
-  category: string
-  buff_key: string
-  sort_order: number
-}
-type FavoriteItemRow = {
-  owner_type: 'driver' | 'blade'
-  owner_name: string
-  persona: string
-  item: string
-  category: string
-  sort_order: number
-}
 
 export default class DB {
   private static instance: DB | undefined
@@ -68,7 +48,19 @@ export default class DB {
     if (this.catalog)
       return this.catalog
     await this.ready
-    const [drivers, blades, binds, effects, excludes, foreignBlocked, weapons, elementChains, pouchCategories, favoriteCategories, favoriteItems] = await Promise.all([
+    const [
+      drivers,
+      blades,
+      binds,
+      effects,
+      excludes,
+      foreignBlocked,
+      weapons,
+      elementChains,
+      pouchCategories,
+      favoriteCategories,
+      favoriteItems,
+    ] = await Promise.all([
       this.db.query<DriverRow>(getDriversSql),
       this.db.query<BladeRow>(getBladesSql),
       this.db.query<BindRow>(getBindsSql),

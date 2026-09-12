@@ -1,5 +1,3 @@
-export type Opt<T> = T | undefined
-export type ValueOf<T> = T[keyof T]
 export type Language = 'ja' | 'en' | 'zh-tw'
 export type BladeSource = 'FIXED' | 'BINDED' | 'FREE'
 export type SlotName = string | null
