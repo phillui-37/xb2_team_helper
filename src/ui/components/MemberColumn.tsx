@@ -188,14 +188,25 @@ export default function MemberColumn(props: MemberColumnProps) {
                   displayEmpty
                   notched
                   onChange={event => setBlade(slot, event.target.value || null)}
+                  renderValue={value => {
+                    if (!value)
+                      return t('ui.empty')
+                    const info = catalog.bladeByName.get(value)
+                    if (!info)
+                      return t(`blade.${value}`)
+                    return bladeSelectSummary(t, info, !catalog.isOnRole(driverName, info.name))
+                  }}
                 >
                   <MenuItem value="">{t('ui.empty')}</MenuItem>
                   {options.map(b => {
                     const offRole = !catalog.isOnRole(driverName, b.name)
+                    const details = bladeSelectDetails(t, b, offRole)
                     return (
-                      <MenuItem key={b.name} value={b.name}>
-                        {t(`blade.${b.name}`)}
-                        {offRole ? ` · ${t('ui.offRole')}` : ''}
+                      <MenuItem key={b.name} value={b.name} sx={{ whiteSpace: 'normal' }}>
+                        <div className="flex min-w-0 flex-col py-0.5">
+                          <span className="leading-tight">{t(`blade.${b.name}`)}</span>
+                          <span className="text-xs leading-tight text-gray-500">{details}</span>
+                        </div>
                       </MenuItem>
                     )
                   })}
@@ -219,6 +230,23 @@ export default function MemberColumn(props: MemberColumnProps) {
       })}
     </div>
   )
+}
+
+type Translate = (key: string) => string
+
+function bladeSelectDetails(t: Translate, blade: BladeInfo, offRole: boolean): string {
+  const parts = [
+    t(`weapon.${blade.weaponName}`),
+    ...blade.elements.map(el => t(`element.${el}`)),
+  ]
+  if (offRole)
+    parts.push(t('ui.offRole'))
+  return parts.join(' · ')
+}
+
+function bladeSelectSummary(t: Translate, blade: BladeInfo, offRole: boolean): string {
+  const details = bladeSelectDetails(t, blade, offRole)
+  return details ? `${t(`blade.${blade.name}`)} · ${details}` : t(`blade.${blade.name}`)
 }
 
 function matchesFilter(catalog: Catalog, driver: string, blade: BladeInfo, filter: DriverFilter): boolean {
