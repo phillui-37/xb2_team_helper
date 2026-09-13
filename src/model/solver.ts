@@ -5,11 +5,18 @@ export const NIA = 'nia'
 
 type DriverWork = {
   driver: string
+  matchRole: boolean
   locked: (string | null)[]
   emptyIdx: number[]
   lockedElem: number
   lockedEffects: [number, number, number, number]
   lockedMask: bigint
+}
+
+type Stealable = {
+  fromDriver: string
+  slotIdx: number
+  blade: string
 }
 
 function combinations<T>(items: T[], k: number): T[][] {
@@ -30,6 +37,16 @@ function combinations<T>(items: T[], k: number): T[][] {
     }
   }
   rec(0, [])
+  return out
+}
+
+function subsets<T>(items: T[]): T[][] {
+  const out: T[][] = [[]]
+  for (const item of items) {
+    const n = out.length
+    for (let i = 0; i < n; i++)
+      out.push([...out[i]!, item])
+  }
   return out
 }
 
@@ -60,6 +77,100 @@ function popcount(mask: number): number {
     c++
   }
   return c
+}
+
+function cloneWorks(works: DriverWork[]): DriverWork[] {
+  return works.map(work => ({
+    driver: work.driver,
+    matchRole: work.matchRole,
+    locked: [...work.locked],
+    emptyIdx: [...work.emptyIdx],
+    lockedElem: work.lockedElem,
+    lockedEffects: [...work.lockedEffects] as [number, number, number, number],
+    lockedMask: work.lockedMask,
+  }))
+}
+
+function recomputeLocked(catalog: Catalog, work: DriverWork): void {
+  let lockedElem = 0
+  const lockedEffects: [number, number, number, number] = [0, 0, 0, 0]
+  let lockedMask = 0n
+  const emptyIdx: number[] = []
+  for (let i = 0; i < 3; i++) {
+    const name = work.locked[i]
+    if (!name) {
+      emptyIdx.push(i)
+      continue
+    }
+    const blade = catalog.bladeByName.get(name)
+    if (!blade)
+      continue
+    lockedElem |= blade.elementMask
+    const delta = effectDelta(catalog, work.driver, name)
+    lockedEffects[0] += delta[0]
+    lockedEffects[1] += delta[1]
+    lockedEffects[2] += delta[2]
+    lockedEffects[3] += delta[3]
+    lockedMask |= 1n << BigInt(blade.index)
+  }
+  work.emptyIdx = emptyIdx
+  work.lockedElem = lockedElem
+  work.lockedEffects = lockedEffects
+  work.lockedMask = lockedMask
+}
+
+function applySteals(
+  catalog: Catalog,
+  works: DriverWork[],
+  borrower: string,
+  stolen: Stealable[],
+): DriverWork[] | null {
+  const next = cloneWorks(works)
+  const rex = next.find(work => work.driver === borrower)
+  if (!rex)
+    return null
+  for (const steal of stolen) {
+    const from = next.find(work => work.driver === steal.fromDriver)
+    if (!from || from.locked[steal.slotIdx] !== steal.blade)
+      return null
+    if (rex.emptyIdx.length === 0)
+      return null
+    from.locked[steal.slotIdx] = null
+    const slot = rex.emptyIdx[0] as number
+    rex.locked[slot] = steal.blade
+    recomputeLocked(catalog, from)
+    recomputeLocked(catalog, rex)
+  }
+  next.sort((a, b) => a.emptyIdx.length - b.emptyIdx.length)
+  return next
+}
+
+function collectStealable(
+  catalog: Catalog,
+  works: DriverWork[],
+  owners: BladeOwners,
+): { borrower: string; blades: Stealable[] } | undefined {
+  const borrower = works.find(work => catalog.driverByName.get(work.driver)?.canUseForeign)
+  if (!borrower)
+    return undefined
+  const blades: Stealable[] = []
+  for (const work of works) {
+    if (work.driver === borrower.driver)
+      continue
+    for (let i = 0; i < 3; i++) {
+      const blade = work.locked[i]
+      if (!blade)
+        continue
+      if (!catalog.isFixed(work.driver, blade))
+        continue
+      if (!catalog.isEligible(borrower.driver, blade, owners))
+        continue
+      if (borrower.matchRole && !catalog.isOnRole(borrower.driver, blade))
+        continue
+      blades.push({ fromDriver: work.driver, slotIdx: i, blade })
+    }
+  }
+  return { borrower: borrower.driver, blades }
 }
 
 export function usedBladeSet(members: MemberState[]): Set<string> {
@@ -121,6 +232,7 @@ export function solve(
     }
     works.push({
       driver,
+      matchRole: member.matchRole,
       locked: [...member.blades],
       emptyIdx,
       lockedElem,
@@ -133,6 +245,7 @@ export function solve(
 
   const results: TeamResult[] = []
   const search = (
+    planned: DriverWork[],
     driverOrd: number,
     usedMask: bigint,
     elem: number,
@@ -141,7 +254,7 @@ export function solve(
   ) => {
     if (results.length >= RESULT_CAP)
       return
-    if (driverOrd === works.length) {
+    if (driverOrd === planned.length) {
       if (elem === catalog.allElementsMask && effectCounts.every(c => c >= need)) {
         const team: TeamMember[] = members.map(m => {
           const driver = m.driver as string
@@ -154,15 +267,15 @@ export function solve(
     }
 
     let remainingSlots = 0
-    for (let i = driverOrd; i < works.length; i++)
-      remainingSlots += works[i]!.emptyIdx.length
+    for (let i = driverOrd; i < planned.length; i++)
+      remainingSlots += planned[i]!.emptyIdx.length
     const missingElem = popcount(catalog.allElementsMask & ~elem)
     const missingEff = effectCounts.reduce((sum, c) => sum + Math.max(0, need - c), 0)
     if (remainingSlots * 2 < missingElem || remainingSlots * 2 < missingEff)
       return
 
-    const work = works[driverOrd] as DriverWork
-    const available = catalog.solverCandidatesFor(work.driver, owners).filter(b => {
+    const work = planned[driverOrd] as DriverWork
+    const available = catalog.solverCandidatesFor(work.driver, owners, work.matchRole).filter(b => {
       if ((usedMask & (1n << BigInt(b.index))) !== 0n)
         return false
       if (niaDriverPicked && b.name === NIA)
@@ -187,18 +300,42 @@ export function solve(
         nextEffects = addEffects(nextEffects, effectDelta(catalog, work.driver, blade.name))
       }
       filled.set(work.driver, slots.map(s => s as string))
-      search(driverOrd + 1, nextMask, nextElem, nextEffects, filled)
+      search(planned, driverOrd + 1, nextMask, nextElem, nextEffects, filled)
     }
   }
 
-  let startMask = 0n
-  let startElem = 0
-  let startEffects: [number, number, number, number] = [0, 0, 0, 0]
-  for (const work of works) {
-    startMask |= work.lockedMask
-    startElem |= work.lockedElem
-    startEffects = addEffects(startEffects, work.lockedEffects)
+  const runPlan = (planned: DriverWork[]) => {
+    if (results.length >= RESULT_CAP)
+      return
+    let startMask = 0n
+    let startElem = 0
+    let startEffects: [number, number, number, number] = [0, 0, 0, 0]
+    for (const work of planned) {
+      startMask |= work.lockedMask
+      startElem |= work.lockedElem
+      startEffects = addEffects(startEffects, work.lockedEffects)
+    }
+    search(planned, 0, startMask, startElem, startEffects, new Map())
   }
-  search(0, startMask, startElem, startEffects, new Map())
+
+  const steal = collectStealable(catalog, works, owners)
+  if (!steal || steal.blades.length === 0) {
+    runPlan(works)
+    return results
+  }
+
+  const borrowerWork = works.find(work => work.driver === steal.borrower)
+  const maxSteal = borrowerWork?.emptyIdx.length ?? 0
+  for (const plan of subsets(steal.blades)) {
+    if (plan.length > maxSteal)
+      continue
+    if (plan.length === 0) {
+      runPlan(works)
+      continue
+    }
+    const planned = applySteals(catalog, works, steal.borrower, plan)
+    if (planned)
+      runPlan(planned)
+  }
   return results
 }

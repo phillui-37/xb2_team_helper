@@ -112,6 +112,8 @@
     "offRole": "Off-role",
     "onRole": "On-role",
     "roleMatch": "Role",
+    "matchRole": "Match role",
+    "borrowed": "Borrowed",
     "resultCount": "{{n}} teams (max 100)",
     "pickDriver": "Select",
     "weapon": "Weapon",

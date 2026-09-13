@@ -1,4 +1,5 @@
 import type { BladeInfo, BladeOwners, BladeSource, Catalog, CharacterGift, DriverInfo, PouchBuff, PouchCategory, WeaponInfo } from "../types/common"
+import { DRIVER_TORA } from "../types/common"
 import type {
   BladeRow,
   BindRow,
@@ -11,7 +12,7 @@ import type {
   PouchCategoryRow,
   WeaponRow,
 } from "../types/dbRows"
-import { manualPick, selectBlades, solverPick } from "./criteria"
+import { eligible, manualPick, selectBlades, solverPick } from "./criteria"
 
 export function buildCatalog(raw: {
   drivers: DriverRow[]
@@ -106,33 +107,49 @@ export function buildCatalog(raw: {
     return binds.some(b => b.isFixed) ? 'FIXED' : 'BINDED'
   }
 
+  const isBindsOnly = (driver: string): boolean => driver === DRIVER_TORA
+
+  const canBorrowBound = (driver: string, blade: string): boolean => {
+    const info = driverByName.get(driver)
+    return !!info?.canUseForeign && !foreignBlocked.has(blade)
+  }
+
   const assignableDrivers = (blade: string): string[] => {
     if (isAssignmentLocked(blade))
       return []
     const banned = excludeByBlade.get(blade)
-    return drivers.filter(d => !banned?.has(d.name)).map(d => d.name)
+    return drivers
+      .filter(d => !isBindsOnly(d.name) && !banned?.has(d.name))
+      .map(d => d.name)
   }
 
   const isEligible = (driver: string, blade: string, owners?: BladeOwners): boolean => {
     if (excludeByBlade.get(blade)?.has(driver))
       return false
     const binds = bindsByBlade.get(blade)
-    if (binds)
-      return binds.some(b => b.driver === driver)
+    if (binds) {
+      if (binds.some(b => b.driver === driver))
+        return true
+      // Rex can use another driver's fixed/bound blade except Poppi α / QT / QTπ.
+      return canBorrowBound(driver, blade)
+    }
+    if (isBindsOnly(driver))
+      return false
     const owner = owners?.get(blade)
-    if (!owner)
+    if (!owner || owner === driver)
       return true
-    if (owner === driver)
-      return true
-    const info = driverByName.get(driver)
-    if (info?.canUseForeign && !foreignBlocked.has(blade))
-      return true
-    return false
+    return canBorrowBound(driver, blade)
   }
 
   const isFixed = (driver: string, blade: string): boolean => {
     const binds = bindsByBlade.get(blade)
     return !!binds?.some(b => b.driver === driver && b.isFixed)
+  }
+
+  const isFixedLocked = (driver: string, blade: string, partyDrivers: readonly string[]): boolean => {
+    if (!isFixed(driver, blade))
+      return false
+    return !partyDrivers.some(other => other !== driver && isEligible(other, blade))
   }
 
   const isOnRole = (driver: string, blade: string): boolean => {
@@ -229,11 +246,18 @@ export function buildCatalog(raw: {
     isEligible,
     isOnRole,
     isFixed,
+    isBindsOnly,
+    canBorrowBound,
+    isFixedLocked,
     effectsOf,
     manualCandidatesFor: (driver, owners) =>
       selectBlades(blades, { catalog, driver, owners }, manualPick),
-    solverCandidatesFor: (driver, owners) =>
-      selectBlades(blades, { catalog, driver, owners }, solverPick),
+    solverCandidatesFor: (driver, owners, matchRole = true) =>
+      selectBlades(
+        blades,
+        { catalog, driver, owners },
+        matchRole ? solverPick : eligible,
+      ),
     allElementsMask: (1 << elements.length) - 1,
   }
   return catalog

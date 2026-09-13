@@ -3,9 +3,13 @@ export type BladeSource = 'FIXED' | 'BINDED' | 'FREE'
 export type SlotName = string | null
 export type BladeOwners = ReadonlyMap<string, string>
 
+export const DRIVER_NIA = 'nia'
+export const DRIVER_TORA = 'tora'
+
 export type MemberState = {
   driver: string | null
   blades: [SlotName, SlotName, SlotName]
+  matchRole: boolean
 }
 
 export type BladeInfo = {
@@ -91,8 +95,11 @@ export type Catalog = {
   isEligible: (driver: string, blade: string, owners?: BladeOwners) => boolean
   isOnRole: (driver: string, blade: string) => boolean
   isFixed: (driver: string, blade: string) => boolean
+  isBindsOnly: (driver: string) => boolean
+  canBorrowBound: (driver: string, blade: string) => boolean
+  isFixedLocked: (driver: string, blade: string, partyDrivers: readonly string[]) => boolean
   effectsOf: (driver: string, blade: string) => string[]
   manualCandidatesFor: (driver: string, owners: BladeOwners) => BladeInfo[]
-  solverCandidatesFor: (driver: string, owners: BladeOwners) => BladeInfo[]
+  solverCandidatesFor: (driver: string, owners: BladeOwners, matchRole?: boolean) => BladeInfo[]
   allElementsMask: number
 }
