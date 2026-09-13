@@ -10,7 +10,12 @@ import ResultList from "../components/ResultList"
 import AssignPage from "./AssignPage"
 import WikiPage from "./wiki/WikiPage"
 
-const emptyMember = (): MemberState => ({ driver: null, blades: [null, null, null], matchRole: true })
+const emptyMember = (): MemberState => ({
+  driver: null,
+  blades: [null, null, null],
+  matchRole: true,
+  borrowBound: true,
+})
 
 export default function MainPage() {
   const [catalog, setCatalog] = useState<Catalog | undefined>(undefined)

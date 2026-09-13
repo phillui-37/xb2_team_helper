@@ -6,6 +6,7 @@ export const NIA = 'nia'
 type DriverWork = {
   driver: string
   matchRole: boolean
+  borrowBound: boolean
   locked: (string | null)[]
   emptyIdx: number[]
   lockedElem: number
@@ -83,6 +84,7 @@ function cloneWorks(works: DriverWork[]): DriverWork[] {
   return works.map(work => ({
     driver: work.driver,
     matchRole: work.matchRole,
+    borrowBound: work.borrowBound,
     locked: [...work.locked],
     emptyIdx: [...work.emptyIdx],
     lockedElem: work.lockedElem,
@@ -150,7 +152,8 @@ function collectStealable(
   works: DriverWork[],
   owners: BladeOwners,
 ): { borrower: string; blades: Stealable[] } | undefined {
-  const borrower = works.find(work => catalog.driverByName.get(work.driver)?.canUseForeign)
+  const borrower = works.find(work =>
+    work.borrowBound && !!catalog.driverByName.get(work.driver)?.canUseForeign)
   if (!borrower)
     return undefined
   const blades: Stealable[] = []
@@ -233,6 +236,7 @@ export function solve(
     works.push({
       driver,
       matchRole: member.matchRole,
+      borrowBound: member.borrowBound,
       locked: [...member.blades],
       emptyIdx,
       lockedElem,
@@ -280,6 +284,8 @@ export function solve(
       if ((usedMask & (1n << BigInt(b.index))) !== 0n)
         return false
       if (niaDriverPicked && b.name === NIA)
+        return false
+      if (!work.borrowBound && catalog.isForeignBound(work.driver, b.name))
         return false
       return true
     })

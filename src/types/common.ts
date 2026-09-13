@@ -10,6 +10,7 @@ export type MemberState = {
   driver: string | null
   blades: [SlotName, SlotName, SlotName]
   matchRole: boolean
+  borrowBound: boolean
 }
 
 export type BladeInfo = {
@@ -97,7 +98,7 @@ export type Catalog = {
   isFixed: (driver: string, blade: string) => boolean
   isBindsOnly: (driver: string) => boolean
   canBorrowBound: (driver: string, blade: string) => boolean
-  isFixedLocked: (driver: string, blade: string, partyDrivers: readonly string[]) => boolean
+  isForeignBound: (driver: string, blade: string) => boolean
   effectsOf: (driver: string, blade: string) => string[]
   manualCandidatesFor: (driver: string, owners: BladeOwners) => BladeInfo[]
   solverCandidatesFor: (driver: string, owners: BladeOwners, matchRole?: boolean) => BladeInfo[]

@@ -72,28 +72,20 @@ export default function MemberColumn(props: MemberColumnProps) {
       })
   }, [catalog, state.driver, owners, t])
 
-  const usedByOthers = useMemo(() => {
-    const used = new Set(props.usedBlades)
-    for (const blade of state.blades) {
-      if (blade)
-        used.delete(blade)
-    }
-    return used
-  }, [props.usedBlades, state.blades])
-
-  const partyDrivers = [...props.takenDrivers]
+  const canBorrow = !!state.driver && !!catalog.driverByName.get(state.driver)?.canUseForeign
 
   const setDriver = (driver: string) => {
     const info = catalog.driverByName.get(driver)
     const blades: [SlotName, SlotName, SlotName] = [null, null, null]
     info?.fixedBlades.forEach((name, i) => {
-      if (i < 3 && !usedByOthers.has(name))
+      if (i < 3)
         blades[i] = name
     })
     props.onChange({
       driver,
       blades,
       matchRole: catalog.isBindsOnly(driver) ? true : state.matchRole,
+      borrowBound: !!info?.canUseForeign && (canBorrow ? state.borrowBound : true),
     })
   }
 
@@ -139,6 +131,17 @@ export default function MemberColumn(props: MemberColumnProps) {
           label={t('ui.matchRole')}
         />
       )}
+      {canBorrow && (
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={state.borrowBound}
+              onChange={event => props.onChange({ ...state, borrowBound: event.target.checked })}
+            />
+          }
+          label={t('ui.borrowBound')}
+        />
+      )}
 
       {state.driver && (
         <div className="flex flex-col gap-2">
@@ -171,7 +174,7 @@ export default function MemberColumn(props: MemberColumnProps) {
 
       {[0, 1, 2].map(slot => {
         const selected = state.blades[slot]
-        const locked = !!state.driver && !!selected && catalog.isFixedLocked(state.driver, selected, partyDrivers)
+        const locked = !!state.driver && !!selected && catalog.isFixed(state.driver, selected)
         if (!state.driver) {
           return (
             <TextField

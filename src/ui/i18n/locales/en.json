@@ -113,6 +113,7 @@
     "onRole": "On-role",
     "roleMatch": "Role",
     "matchRole": "Match role",
+    "borrowBound": "Use others' unique blades",
     "borrowed": "Borrowed",
     "resultCount": "{{n}} teams (max 100)",
     "pickDriver": "Select",

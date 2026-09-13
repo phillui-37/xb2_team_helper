@@ -113,6 +113,7 @@
     "onRole": "本職",
     "roleMatch": "本職",
     "matchRole": "符合本職",
+    "borrowBound": "使用其他劍主專用",
     "borrowed": "借用",
     "resultCount": "{{n}} 組（最多100）",
     "pickDriver": "選擇",

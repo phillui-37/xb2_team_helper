@@ -146,10 +146,9 @@ export function buildCatalog(raw: {
     return !!binds?.some(b => b.driver === driver && b.isFixed)
   }
 
-  const isFixedLocked = (driver: string, blade: string, partyDrivers: readonly string[]): boolean => {
-    if (!isFixed(driver, blade))
-      return false
-    return !partyDrivers.some(other => other !== driver && isEligible(other, blade))
+  const isForeignBound = (driver: string, blade: string): boolean => {
+    const dedicated = dedicatedDrivers(blade)
+    return dedicated.length > 0 && !dedicated.includes(driver)
   }
 
   const isOnRole = (driver: string, blade: string): boolean => {
@@ -248,7 +247,7 @@ export function buildCatalog(raw: {
     isFixed,
     isBindsOnly,
     canBorrowBound,
-    isFixedLocked,
+    isForeignBound,
     effectsOf,
     manualCandidatesFor: (driver, owners) =>
       selectBlades(blades, { catalog, driver, owners }, manualPick),
