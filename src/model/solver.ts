@@ -251,8 +251,9 @@ export function solve(
     elem: number,
     effectCounts: [number, number, number, number],
     filled: Map<string, string[]>,
+    resultCap: number,
   ) => {
-    if (results.length >= RESULT_CAP)
+    if (results.length >= resultCap)
       return
     if (driverOrd === planned.length) {
       if (elem === catalog.allElementsMask && effectCounts.every(c => c >= need)) {
@@ -285,7 +286,7 @@ export function solve(
     const combos = combinations(available, work.emptyIdx.length)
 
     for (const combo of combos) {
-      if (results.length >= RESULT_CAP)
+      if (results.length >= resultCap)
         return
       let nextMask = usedMask
       let nextElem = elem
@@ -300,12 +301,12 @@ export function solve(
         nextEffects = addEffects(nextEffects, effectDelta(catalog, work.driver, blade.name))
       }
       filled.set(work.driver, slots.map(s => s as string))
-      search(planned, driverOrd + 1, nextMask, nextElem, nextEffects, filled)
+      search(planned, driverOrd + 1, nextMask, nextElem, nextEffects, filled, resultCap)
     }
   }
 
-  const runPlan = (planned: DriverWork[]) => {
-    if (results.length >= RESULT_CAP)
+  const runPlan = (planned: DriverWork[], resultCap: number) => {
+    if (results.length >= resultCap)
       return
     let startMask = 0n
     let startElem = 0
@@ -315,27 +316,27 @@ export function solve(
       startElem |= work.lockedElem
       startEffects = addEffects(startEffects, work.lockedEffects)
     }
-    search(planned, 0, startMask, startElem, startEffects, new Map())
+    search(planned, 0, startMask, startElem, startEffects, new Map(), resultCap)
   }
 
   const steal = collectStealable(catalog, works, owners)
-  if (!steal || steal.blades.length === 0) {
-    runPlan(works)
-    return results
-  }
-
-  const borrowerWork = works.find(work => work.driver === steal.borrower)
+  const borrowerWork = steal
+    ? works.find(work => work.driver === steal.borrower)
+    : undefined
   const maxSteal = borrowerWork?.emptyIdx.length ?? 0
-  for (const plan of subsets(steal.blades)) {
-    if (plan.length > maxSteal)
-      continue
-    if (plan.length === 0) {
-      runPlan(works)
-      continue
-    }
-    const planned = applySteals(catalog, works, steal.borrower, plan)
-    if (planned)
-      runPlan(planned)
-  }
+  const stealPlans = steal
+    ? subsets(steal.blades).filter(plan => plan.length <= maxSteal)
+    : [[]]
+  const prepared = stealPlans.map(plan => {
+    if (plan.length === 0)
+      return works
+    return applySteals(catalog, works, steal!.borrower, plan)
+  }).filter((planned): planned is DriverWork[] => !!planned)
+
+  const quota = Math.max(1, Math.floor(RESULT_CAP / Math.max(1, prepared.length)))
+  for (const planned of prepared)
+    runPlan(planned, Math.min(RESULT_CAP, results.length + quota))
+  for (const planned of prepared)
+    runPlan(planned, RESULT_CAP)
   return results
 }
