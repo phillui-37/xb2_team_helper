@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { Clear } from "@mui/icons-material"
-import { Chip, FormControl, IconButton, InputLabel, MenuItem, Select, TextField } from "@mui/material"
+import { Checkbox, Chip, FormControl, FormControlLabel, IconButton, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import type { BladeInfo, BladeOwners, Catalog, MemberState, SlotName } from "../../types/common"
 import { NIA } from "../../model/solver"
 import {
@@ -8,7 +8,6 @@ import {
   and,
   eligible,
   niaBladeOk,
-  notFixed,
   notNamed,
   or,
   selectBlades,
@@ -73,6 +72,8 @@ export default function MemberColumn(props: MemberColumnProps) {
       })
   }, [catalog, state.driver, owners, t])
 
+  const canBorrow = !!state.driver && !!catalog.driverByName.get(state.driver)?.canUseForeign
+
   const setDriver = (driver: string) => {
     const info = catalog.driverByName.get(driver)
     const blades: [SlotName, SlotName, SlotName] = [null, null, null]
@@ -80,7 +81,12 @@ export default function MemberColumn(props: MemberColumnProps) {
       if (i < 3)
         blades[i] = name
     })
-    props.onChange({ driver, blades })
+    props.onChange({
+      driver,
+      blades,
+      matchRole: catalog.isBindsOnly(driver) ? true : state.matchRole,
+      borrowBound: !!info?.canUseForeign && (canBorrow ? state.borrowBound : true),
+    })
   }
 
   const setBlade = (slot: number, blade: SlotName) => {
@@ -113,6 +119,29 @@ export default function MemberColumn(props: MemberColumnProps) {
           ))}
         </Select>
       </FormControl>
+
+      {state.driver && !catalog.isBindsOnly(state.driver) && (
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={state.matchRole}
+              onChange={event => props.onChange({ ...state, matchRole: event.target.checked })}
+            />
+          }
+          label={t('ui.matchRole')}
+        />
+      )}
+      {canBorrow && (
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={state.borrowBound}
+              onChange={event => props.onChange({ ...state, borrowBound: event.target.checked })}
+            />
+          }
+          label={t('ui.borrowBound')}
+        />
+      )}
 
       {state.driver && (
         <div className="flex flex-col gap-2">
@@ -177,7 +206,6 @@ export default function MemberColumn(props: MemberColumnProps) {
             allowName(selected ?? null),
             and(
               eligible,
-              notFixed,
               notNamed(props.usedBlades),
               niaBladeOk(props.niaDriverTaken),
               uiFilters(filter),
@@ -211,7 +239,9 @@ export default function MemberColumn(props: MemberColumnProps) {
                   <MenuItem value="">{t('ui.empty')}</MenuItem>
                   {options.map(b => {
                     const offRole = !catalog.isOnRole(driverName, b.name)
-                    const details = bladeSelectDetails(t, b, offRole)
+                    const dedicated = catalog.dedicatedDrivers(b.name)
+                    const borrowed = dedicated.length > 0 && !dedicated.includes(driverName)
+                    const details = bladeSelectDetails(t, b, offRole, borrowed)
                     return (
                       <MenuItem key={b.name} value={b.name} sx={{ whiteSpace: 'normal' }}>
                         <div className="flex min-w-0 flex-col py-0.5">
@@ -245,11 +275,13 @@ export default function MemberColumn(props: MemberColumnProps) {
 
 type Translate = (key: string) => string
 
-function bladeSelectDetails(t: Translate, blade: BladeInfo, offRole: boolean): string {
+function bladeSelectDetails(t: Translate, blade: BladeInfo, offRole: boolean, borrowed: boolean): string {
   const parts = [
     t(`weapon.${blade.weaponName}`),
     ...blade.elements.map(el => t(`element.${el}`)),
   ]
+  if (borrowed)
+    parts.push(t('ui.borrowed'))
   if (offRole)
     parts.push(t('ui.offRole'))
   return parts.join(' · ')
@@ -320,8 +352,11 @@ function BladeChips(props: { catalog: Catalog; driver: string; blade: string }) 
   const info = props.catalog.bladeByName.get(props.blade)
   const effects = props.catalog.effectsOf(props.driver, props.blade)
   const offRole = !props.catalog.isOnRole(props.driver, props.blade) && !props.catalog.isFixed(props.driver, props.blade)
+  const dedicated = props.catalog.dedicatedDrivers(props.blade)
+  const borrowed = dedicated.length > 0 && !dedicated.includes(props.driver)
   return (
     <div className="flex flex-wrap gap-1">
+      {borrowed && <Chip size="small" color="info" label={t('ui.borrowed')} />}
       {offRole && <Chip size="small" color="warning" label={t('ui.offRole')} />}
       {info && (
         <Chip size="small" color="secondary" variant="outlined" label={t(`weapon.${info.weaponName}`)} />

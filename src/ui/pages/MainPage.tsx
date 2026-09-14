@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Button, Checkbox, CircularProgress, FormControlLabel, Tab, Tabs, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material"
 import DB from "../../model/db"
 import { hasNiaBlade, hasNiaDriver, solve, usedBladeSet } from "../../model/solver"
-import { readOwners, sanitizeMembers, storeOwners } from "../../model/owners"
+import { readOwners, reconcileMembers, storeOwners } from "../../model/owners"
 import type { Catalog, Language, MemberState, TeamResult } from "../../types/common"
 import { LANGUAGES, useI18n } from "../i18n/LanguageContext"
 import MemberColumn from "../components/MemberColumn"
@@ -10,7 +10,12 @@ import ResultList from "../components/ResultList"
 import AssignPage from "./AssignPage"
 import WikiPage from "./wiki/WikiPage"
 
-const emptyMember = (): MemberState => ({ driver: null, blades: [null, null, null] })
+const emptyMember = (): MemberState => ({
+  driver: null,
+  blades: [null, null, null],
+  matchRole: true,
+  borrowBound: true,
+})
 
 export default function MainPage() {
   const [catalog, setCatalog] = useState<Catalog | undefined>(undefined)
@@ -50,14 +55,19 @@ function AppShell(props: { catalog: Catalog }) {
   const canCalculate = members.every(m => m.driver)
 
   const updateMember = (index: number, next: MemberState) => {
-    setMembers(ori => ori.map((m, i) => i === index ? next : m))
+    setMembers(ori => reconcileMembers(
+      catalog,
+      ori.map((m, i) => i === index ? next : m),
+      owners,
+      index,
+    ))
     setResults(undefined)
   }
 
   const updateOwners = (next: Map<string, string>) => {
     storeOwners(next)
     setOwners(next)
-    setMembers(ori => sanitizeMembers(catalog, ori, next))
+    setMembers(ori => reconcileMembers(catalog, ori, next))
     setResults(undefined)
   }
 

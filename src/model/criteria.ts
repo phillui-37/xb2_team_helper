@@ -93,7 +93,8 @@ export const anyEffect = (effects: readonly string[]): Criterion =>
 
 export const manualPick: Criterion = eligible
 
-export const solverPick: Criterion = and(eligible, onRole, notFixed)
+/** Solver default: eligible + on-role. Own unused fixed blades stay pickable so Rex can return a stolen blade. */
+export const solverPick: Criterion = and(eligible, onRole)
 
 export const uiFilters = (filter: {
   elements: readonly string[]
