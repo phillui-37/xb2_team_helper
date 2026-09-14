@@ -44,8 +44,7 @@ const locked = [
   "kaguduchi", "wadatumi", "kasandra",
   "saika", "wulfric",
 ].map((name, index) => blade(name, index))
-const zanobia = blade("zanobia", 8)
-const extra = blade("extra", 9)
+const fills = [8, 9, 10].map(index => blade(`fill-${index}`, index))
 const drivers = [
   driver("rex", "Attacker", true),
   driver("merefu", "Tank", false),
@@ -80,27 +79,27 @@ function assert(cond: boolean, message: string): void {
 }
 
 const screenshotLike = mockCatalog({
-  blades: [...locked, zanobia],
+  blades: [...locked, fills[0]!],
   drivers,
   effectsOf,
-  candidates: [zanobia],
+  candidates: [fills[0]!],
 })
 
 const oneFill = solve(screenshotLike, members, true, new Map())
-assert(oneFill.length === 1, `expected 1 team after memo, got ${oneFill.length}`)
-assert(oneFill[0]?.members[2]?.blades[2] === "zanobia", "empty slot should fill zanobia")
+assert(oneFill.length === 1, `expected 1 team, got ${oneFill.length}`)
+assert(oneFill[0]?.members[2]?.blades[2] === "fill-8", "empty slot should fill the only candidate")
 
-const twoCandidates = mockCatalog({
-  blades: [...locked, zanobia, extra],
+const threeCandidates = mockCatalog({
+  blades: [...locked, ...fills],
   drivers,
   effectsOf,
-  candidates: [zanobia, extra],
+  candidates: fills,
 })
-const twoFill = solve(twoCandidates, members, true, new Map())
-assert(twoFill.length === 2, `expected 2 distinct teams, got ${twoFill.length}`)
-assert(uniqueKeys(twoFill).length === 2, "two fills must stay distinct")
+const threeFill = solve(threeCandidates, members, true, new Map())
+assert(threeFill.length === 3, `expected 3 distinct teams, got ${threeFill.length}`)
+assert(uniqueKeys(threeFill).length === 3, "three fills must stay distinct and not double-emitted")
 
-console.log("solver memo checks passed", {
+console.log("solver duplicate checks passed", {
   screenshotLike: oneFill.length,
-  twoCandidates: twoFill.length,
+  threeCandidates: threeFill.length,
 })

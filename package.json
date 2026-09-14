@@ -6,7 +6,7 @@
     "dev": "npx vite",
     "build": "npx vite build",
     "preview": "npx vite preview",
-    "test:solver": "node --experimental-strip-types scripts/check-solver-memo.ts"
+    "test:solver": "node --experimental-strip-types scripts/check-solver.ts"
   },
   "keywords": [
     "xenoblade2",
