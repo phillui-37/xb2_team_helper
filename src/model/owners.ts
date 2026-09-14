@@ -92,20 +92,15 @@ export const reconcileMembers = (
     }
   }
   const next = sanitized.map((member, i) => ({ ...member, blades: slots[i]! }))
-  const hasBorrower = next.some(member =>
-    !!member.driver && !!catalog.driverByName.get(member.driver)?.canUseForeign)
-  if (hasBorrower)
-    return next
   for (const member of next) {
     if (!member.driver)
       continue
     for (const name of catalog.driverByName.get(member.driver)?.fixedBlades ?? []) {
       if (member.blades.includes(name) || claimed.has(name))
         continue
-      const empty = member.blades.findIndex(blade => !blade)
-      if (empty < 0)
-        continue
-      member.blades[empty] = name
+      // Resume a released unique blade on the dedicated driver's first slot,
+      // replacing whatever was there.
+      member.blades[0] = name
       claimed.add(name)
     }
   }

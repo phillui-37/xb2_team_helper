@@ -8,10 +8,10 @@ import {
   and,
   eligible,
   niaBladeOk,
-  notNamed,
   or,
   selectBlades,
   uiFilters,
+  unusedOrStealable,
 } from "../../model/criteria"
 import { useI18n } from "../i18n/LanguageContext"
 
@@ -74,11 +74,20 @@ export default function MemberColumn(props: MemberColumnProps) {
 
   const canBorrow = !!state.driver && !!catalog.driverByName.get(state.driver)?.canUseForeign
 
+  const usedByOthers = useMemo(() => {
+    const used = new Set(props.usedBlades)
+    for (const blade of state.blades) {
+      if (blade)
+        used.delete(blade)
+    }
+    return used
+  }, [props.usedBlades, state.blades])
+
   const setDriver = (driver: string) => {
     const info = catalog.driverByName.get(driver)
     const blades: [SlotName, SlotName, SlotName] = [null, null, null]
     info?.fixedBlades.forEach((name, i) => {
-      if (i < 3)
+      if (i < 3 && !usedByOthers.has(name))
         blades[i] = name
     })
     props.onChange({
@@ -206,12 +215,16 @@ export default function MemberColumn(props: MemberColumnProps) {
             allowName(selected ?? null),
             and(
               eligible,
-              notNamed(props.usedBlades),
+              unusedOrStealable(props.usedBlades, state.blades),
               niaBladeOk(props.niaDriverTaken),
               uiFilters(filter),
             ),
           ),
         ).slice().sort((a, b) => {
+          const aSteal = catalog.isForeignBound(driverName, a.name) ? 0 : 1
+          const bSteal = catalog.isForeignBound(driverName, b.name) ? 0 : 1
+          if (aSteal !== bSteal)
+            return aSteal - bSteal
           const aOn = catalog.isOnRole(driverName, a.name) ? 0 : 1
           const bOn = catalog.isOnRole(driverName, b.name) ? 0 : 1
           if (aOn !== bOn)

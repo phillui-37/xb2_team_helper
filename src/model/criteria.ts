@@ -62,6 +62,21 @@ export const notFixed: Criterion = criterion("notFixed", ctx =>
 export const notNamed = (blocked: ReadonlySet<string>): Criterion =>
   criterion(`notNamed(${blocked.size})`, ctx => !blocked.has(ctx.blade.name))
 
+/** Unused blades, plus unique blades Rex may take from another driver who currently holds them. */
+export const unusedOrStealable = (
+  used: ReadonlySet<string>,
+  heldByDriver: readonly (string | null)[],
+): Criterion =>
+  criterion("unusedOrStealable", ctx => {
+    const name = ctx.blade.name
+    if (!used.has(name))
+      return true
+    if (heldByDriver.includes(name))
+      return false
+    return ctx.catalog.canBorrowBound(ctx.driver, name)
+      && ctx.catalog.isForeignBound(ctx.driver, name)
+  })
+
 export const allowName = (name: string | null): Criterion =>
   name
     ? criterion(`allowName(${name})`, ctx => ctx.blade.name === name)
