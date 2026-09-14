@@ -115,6 +115,7 @@
     "matchRole": "符合本職",
     "borrowBound": "使用其他劍主專用",
     "borrowed": "借用",
+    "reclaim": "歸還",
     "resultCount": "{{n}} 組（最多100）",
     "pickDriver": "選擇",
     "weapon": "武器",

@@ -115,6 +115,7 @@
     "matchRole": "Match role",
     "borrowBound": "Use others' unique blades",
     "borrowed": "Borrowed",
+    "reclaim": "Return",
     "resultCount": "{{n}} teams (max 100)",
     "pickDriver": "Select",
     "weapon": "Weapon",

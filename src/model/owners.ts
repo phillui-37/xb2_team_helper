@@ -98,9 +98,12 @@ export const reconcileMembers = (
     for (const name of catalog.driverByName.get(member.driver)?.fixedBlades ?? []) {
       if (member.blades.includes(name) || claimed.has(name))
         continue
-      // Resume a released unique blade on the dedicated driver's first slot,
-      // replacing whatever was there.
-      member.blades[0] = name
+      // Snap a released fixed blade into the first empty slot. Occupied
+      // slots stay as chosen; the driver can pick the unique from options.
+      const empty = member.blades.findIndex(blade => !blade)
+      if (empty < 0)
+        continue
+      member.blades[empty] = name
       claimed.add(name)
     }
   }
