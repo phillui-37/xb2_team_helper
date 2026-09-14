@@ -92,16 +92,14 @@ export const reconcileMembers = (
     }
   }
   const next = sanitized.map((member, i) => ({ ...member, blades: slots[i]! }))
-  const hasBorrower = next.some(member =>
-    !!member.driver && !!catalog.driverByName.get(member.driver)?.canUseForeign)
-  if (hasBorrower)
-    return next
   for (const member of next) {
     if (!member.driver)
       continue
     for (const name of catalog.driverByName.get(member.driver)?.fixedBlades ?? []) {
       if (member.blades.includes(name) || claimed.has(name))
         continue
+      // Snap a released fixed blade into the first empty slot. Occupied
+      // slots stay as chosen; the driver can pick the unique from options.
       const empty = member.blades.findIndex(blade => !blade)
       if (empty < 0)
         continue

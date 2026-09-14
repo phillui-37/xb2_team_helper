@@ -1,5 +1,6 @@
 import { Array as Arr, Effect, Predicate, pipe } from "effect"
-import type { BladeInfo, BladeOwners, Catalog } from "../types/common"
+import type { BladeInfo, BladeOwners, Catalog, MemberState } from "../types/common"
+import { canPickFromTeam } from "./availability"
 
 /** Query context for blade criteria — consumers never touch SQL. */
 export type CriterionContext = {
@@ -61,6 +62,14 @@ export const notFixed: Criterion = criterion("notFixed", ctx =>
 
 export const notNamed = (blocked: ReadonlySet<string>): Criterion =>
   criterion(`notNamed(${blocked.size})`, ctx => !blocked.has(ctx.blade.name))
+
+/** Unused blades, plus unique blades Rex can take or the dedicated driver can return. */
+export const availableFromState = (
+  members: readonly MemberState[],
+  heldByDriver: readonly (string | null)[],
+): Criterion =>
+  criterion("availableFromState", ctx =>
+    canPickFromTeam(ctx.catalog, ctx.driver, ctx.blade.name, members, heldByDriver))
 
 export const allowName = (name: string | null): Criterion =>
   name

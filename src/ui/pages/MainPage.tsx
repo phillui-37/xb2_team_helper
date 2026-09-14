@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Button, Checkbox, CircularProgress, FormControlLabel, Tab, Tabs, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material"
 import DB from "../../model/db"
-import { hasNiaBlade, hasNiaDriver, solve, usedBladeSet } from "../../model/solver"
+import { hasNiaBlade, hasNiaDriver, solve } from "../../model/solver"
 import { readOwners, reconcileMembers, storeOwners } from "../../model/owners"
 import type { Catalog, Language, MemberState, TeamResult } from "../../types/common"
 import { LANGUAGES, useI18n } from "../i18n/LanguageContext"
@@ -45,7 +45,6 @@ function AppShell(props: { catalog: Catalog }) {
   const [results, setResults] = useState<TeamResult[] | undefined>(undefined)
   const [calculating, setCalculating] = useState(false)
 
-  const usedBlades = useMemo(() => usedBladeSet(members), [members])
   const takenDrivers = useMemo(
     () => new Set(members.map(m => m.driver).filter((d): d is string => !!d)),
     [members],
@@ -146,8 +145,8 @@ function AppShell(props: { catalog: Catalog }) {
                 catalog={catalog}
                 index={index}
                 state={member}
+                members={members}
                 owners={owners}
-                usedBlades={usedBlades}
                 takenDrivers={takenDrivers}
                 niaBladeTaken={niaBladeTaken}
                 niaDriverTaken={niaDriverTaken}

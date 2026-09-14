@@ -115,6 +115,7 @@
     "matchRole": "ロール一致",
     "borrowBound": "他ドライバーの専用を使用",
     "borrowed": "借用",
+    "reclaim": "返却",
     "resultCount": "{{n}} 件（最大100）",
     "pickDriver": "選択",
     "weapon": "武器",

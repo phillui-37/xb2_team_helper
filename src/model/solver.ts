@@ -164,7 +164,7 @@ function collectStealable(
       const blade = work.locked[i]
       if (!blade)
         continue
-      if (!catalog.isFixed(work.driver, blade))
+      if (!catalog.isForeignBound(borrower.driver, blade))
         continue
       if (!catalog.isEligible(borrower.driver, blade, owners))
         continue

@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from "react"
 import { Clear } from "@mui/icons-material"
 import { Checkbox, Chip, FormControl, FormControlLabel, IconButton, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import type { BladeInfo, BladeOwners, Catalog, MemberState, SlotName } from "../../types/common"
+import { holderOf } from "../../model/availability"
 import { NIA } from "../../model/solver"
 import {
   allowName,
   and,
+  availableFromState,
   eligible,
   niaBladeOk,
-  notNamed,
   or,
   selectBlades,
   uiFilters,
@@ -27,8 +28,8 @@ export type MemberColumnProps = {
   catalog: Catalog
   index: number
   state: MemberState
+  members: MemberState[]
   owners: BladeOwners
-  usedBlades: Set<string>
   takenDrivers: Set<string>
   niaBladeTaken: boolean
   niaDriverTaken: boolean
@@ -74,11 +75,24 @@ export default function MemberColumn(props: MemberColumnProps) {
 
   const canBorrow = !!state.driver && !!catalog.driverByName.get(state.driver)?.canUseForeign
 
+  const usedByOthers = useMemo(() => {
+    const used = new Set<string>()
+    for (let i = 0; i < props.members.length; i++) {
+      if (i === props.index)
+        continue
+      for (const blade of props.members[i]!.blades) {
+        if (blade)
+          used.add(blade)
+      }
+    }
+    return used
+  }, [props.members, props.index])
+
   const setDriver = (driver: string) => {
     const info = catalog.driverByName.get(driver)
     const blades: [SlotName, SlotName, SlotName] = [null, null, null]
     info?.fixedBlades.forEach((name, i) => {
-      if (i < 3)
+      if (i < 3 && !usedByOthers.has(name))
         blades[i] = name
     })
     props.onChange({
@@ -206,12 +220,16 @@ export default function MemberColumn(props: MemberColumnProps) {
             allowName(selected ?? null),
             and(
               eligible,
-              notNamed(props.usedBlades),
+              availableFromState(props.members, state.blades),
               niaBladeOk(props.niaDriverTaken),
               uiFilters(filter),
             ),
           ),
         ).slice().sort((a, b) => {
+          const aMove = optionMoveRank(catalog, driverName, a.name, props.members)
+          const bMove = optionMoveRank(catalog, driverName, b.name, props.members)
+          if (aMove !== bMove)
+            return aMove - bMove
           const aOn = catalog.isOnRole(driverName, a.name) ? 0 : 1
           const bOn = catalog.isOnRole(driverName, b.name) ? 0 : 1
           if (aOn !== bOn)
@@ -240,8 +258,10 @@ export default function MemberColumn(props: MemberColumnProps) {
                   {options.map(b => {
                     const offRole = !catalog.isOnRole(driverName, b.name)
                     const dedicated = catalog.dedicatedDrivers(b.name)
+                    const holder = holderOf(props.members, b.name)
                     const borrowed = dedicated.length > 0 && !dedicated.includes(driverName)
-                    const details = bladeSelectDetails(t, b, offRole, borrowed)
+                    const reclaim = !!holder && holder !== driverName && dedicated.includes(driverName)
+                    const details = bladeSelectDetails(t, b, offRole, borrowed, reclaim)
                     return (
                       <MenuItem key={b.name} value={b.name} sx={{ whiteSpace: 'normal' }}>
                         <div className="flex min-w-0 flex-col py-0.5">
@@ -275,13 +295,37 @@ export default function MemberColumn(props: MemberColumnProps) {
 
 type Translate = (key: string) => string
 
-function bladeSelectDetails(t: Translate, blade: BladeInfo, offRole: boolean, borrowed: boolean): string {
+function optionMoveRank(
+  catalog: Catalog,
+  driver: string,
+  blade: string,
+  members: readonly MemberState[],
+): number {
+  const holder = holderOf(members, blade)
+  if (!holder || holder === driver)
+    return 1
+  if (catalog.isForeignBound(driver, blade))
+    return 0
+  if (catalog.dedicatedDrivers(blade).includes(driver))
+    return 0
+  return 1
+}
+
+function bladeSelectDetails(
+  t: Translate,
+  blade: BladeInfo,
+  offRole: boolean,
+  borrowed: boolean,
+  reclaim: boolean,
+): string {
   const parts = [
     t(`weapon.${blade.weaponName}`),
     ...blade.elements.map(el => t(`element.${el}`)),
   ]
   if (borrowed)
     parts.push(t('ui.borrowed'))
+  if (reclaim)
+    parts.push(t('ui.reclaim'))
   if (offRole)
     parts.push(t('ui.offRole'))
   return parts.join(' · ')
