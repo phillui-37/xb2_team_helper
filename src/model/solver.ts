@@ -80,6 +80,11 @@ function popcount(mask: number): number {
   return c
 }
 
+/** Completed assignment identity. Intermediate (driver, usedMask) is not a valid merge key. */
+export function teamMemoKey(members: TeamMember[]): string {
+  return members.map(m => `${m.driver}:${m.blades.join(",")}`).join("|")
+}
+
 function cloneWorks(works: DriverWork[]): DriverWork[] {
   return works.map(work => ({
     driver: work.driver,
@@ -248,6 +253,10 @@ export function solve(
   works.sort((a, b) => a.emptyIdx.length - b.emptyIdx.length)
 
   const results: TeamResult[] = []
+  // DP memo of completed assignments. Intermediate (driver, usedMask) would
+  // merge distinct slottings; steal-plan search also restarts in a second pass,
+  // so the same team would otherwise be emitted twice.
+  const seen = new Set<string>()
   const search = (
     planned: DriverWork[],
     driverOrd: number,
@@ -266,6 +275,10 @@ export function solve(
           const blades = filled.get(driver) as string[]
           return { driver, blades: [blades[0] as string, blades[1] as string, blades[2] as string] }
         })
+        const key = teamMemoKey(team)
+        if (seen.has(key))
+          return
+        seen.add(key)
         results.push({ members: team, elementMask: elem, effectCounts: [...effectCounts] })
       }
       return
