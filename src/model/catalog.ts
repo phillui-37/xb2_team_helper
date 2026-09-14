@@ -1,3 +1,4 @@
+import { match, P } from "ts-pattern"
 import type { BladeInfo, BladeOwners, BladeSource, Catalog, CharacterGift, DriverInfo, PouchBuff, PouchCategory, WeaponInfo } from "../types/common"
 import { DRIVER_TORA } from "../types/common"
 import type {
@@ -100,12 +101,11 @@ export function buildCatalog(raw: {
   const isAssignmentLocked = (blade: string): boolean =>
     (bindsByBlade.get(blade)?.length ?? 0) > 0
 
-  const bladeSource = (blade: string): BladeSource => {
-    const binds = bindsByBlade.get(blade)
-    if (!binds)
-      return 'FREE'
-    return binds.some(b => b.isFixed) ? 'FIXED' : 'BINDED'
-  }
+  const bladeSource = (blade: string): BladeSource =>
+    match(bindsByBlade.get(blade))
+      .with(P.nullish, () => 'FREE' as const)
+      .when(binds => binds.some(b => b.isFixed), () => 'FIXED' as const)
+      .otherwise(() => 'BINDED' as const)
 
   const isBindsOnly = (driver: string): boolean => driver === DRIVER_TORA
 

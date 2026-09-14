@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { Button, Checkbox, CircularProgress, FormControlLabel, Tab, Tabs, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material"
+import { match, P } from "ts-pattern"
 import DB from "../../model/db"
 import { hasNiaBlade, hasNiaDriver, solve } from "../../model/solver"
 import { readOwners, reconcileMembers, storeOwners } from "../../model/owners"
@@ -9,6 +10,8 @@ import MemberColumn from "../components/MemberColumn"
 import ResultList from "../components/ResultList"
 import AssignPage from "./AssignPage"
 import WikiPage from "./wiki/WikiPage"
+
+type MainTab = 0 | 1 | 2
 
 const emptyMember = (): MemberState => ({
   driver: null,
@@ -27,18 +30,22 @@ export default function MainPage() {
       .catch(err => setError(err instanceof Error ? err.message : String(err)))
   }, [])
 
-  if (error)
-    return <div className="p-6 text-red-700">{error}</div>
-  if (!catalog)
-    return <div className="flex min-h-screen items-center justify-center"><CircularProgress /></div>
-
-  return <AppShell catalog={catalog} />
+  return match({ error, catalog })
+    .with({ error: P.string }, ({ error }) => (
+      <div className="p-6 text-red-700">{error}</div>
+    ))
+    .with({ catalog: P.nonNullable }, ({ catalog }) => (
+      <AppShell catalog={catalog} />
+    ))
+    .otherwise(() => (
+      <div className="flex min-h-screen items-center justify-center"><CircularProgress /></div>
+    ))
 }
 
 function AppShell(props: { catalog: Catalog }) {
   const { catalog } = props
   const { t, lang, setLang } = useI18n()
-  const [tab, setTab] = useState(0)
+  const [tab, setTab] = useState<MainTab>(0)
   const [owners, setOwners] = useState<Map<string, string>>(() => readOwners(catalog))
   const [members, setMembers] = useState<MemberState[]>([emptyMember(), emptyMember(), emptyMember()])
   const [redundancy, setRedundancy] = useState(false)
@@ -103,73 +110,73 @@ function AppShell(props: { catalog: Catalog }) {
 
       <Tabs
         value={tab}
-        onChange={(_event, value: number) => setTab(value)}
+        onChange={(_event, value: MainTab) => setTab(value)}
       >
         <Tab label={t('ui.tabTeam')} />
         <Tab label={t('ui.tabAssign')} />
         <Tab label={t('ui.tabWiki')} />
       </Tabs>
 
-      {tab === 0 && (
-        <>
-          <div className="flex flex-wrap items-center gap-3">
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={redundancy}
-                  onChange={event => {
-                    setRedundancy(event.target.checked)
-                    setResults(undefined)
-                  }}
-                />
-              }
-              label={t('ui.redundancy')}
-            />
-            <Button
-              variant="contained"
-              onClick={runCalculate}
-              disabled={!canCalculate || calculating}
-            >
-              {t('ui.calculate')}
-            </Button>
-            {!canCalculate && (
-              <Typography variant="body2" color="text.secondary">{t('ui.selectDrivers')}</Typography>
-            )}
-            {calculating && <CircularProgress size={22} />}
-          </div>
-
-          <div className="flex flex-col gap-3 md:flex-row">
-            {members.map((member, index) => (
-              <MemberColumn
-                key={index}
-                catalog={catalog}
-                index={index}
-                state={member}
-                members={members}
-                owners={owners}
-                takenDrivers={takenDrivers}
-                niaBladeTaken={niaBladeTaken}
-                niaDriverTaken={niaDriverTaken}
-                onChange={next => updateMember(index, next)}
+      {match(tab)
+        .with(0, () => (
+          <>
+            <div className="flex flex-wrap items-center gap-3">
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={redundancy}
+                    onChange={event => {
+                      setRedundancy(event.target.checked)
+                      setResults(undefined)
+                    }}
+                  />
+                }
+                label={t('ui.redundancy')}
               />
-            ))}
-          </div>
+              <Button
+                variant="contained"
+                onClick={runCalculate}
+                disabled={!canCalculate || calculating}
+              >
+                {t('ui.calculate')}
+              </Button>
+              {!canCalculate && (
+                <Typography variant="body2" color="text.secondary">{t('ui.selectDrivers')}</Typography>
+              )}
+              {calculating && <CircularProgress size={22} />}
+            </div>
 
-          <section className="flex flex-col gap-2">
-            <Typography variant="h6">{t('ui.results')}</Typography>
-            {calculating && <Typography color="text.secondary">{t('ui.loading')}</Typography>}
-            {results && <ResultList catalog={catalog} results={results} />}
-          </section>
-        </>
-      )}
+            <div className="flex flex-col gap-3 md:flex-row">
+              {members.map((member, index) => (
+                <MemberColumn
+                  key={index}
+                  catalog={catalog}
+                  index={index}
+                  state={member}
+                  members={members}
+                  owners={owners}
+                  takenDrivers={takenDrivers}
+                  niaBladeTaken={niaBladeTaken}
+                  niaDriverTaken={niaDriverTaken}
+                  onChange={next => updateMember(index, next)}
+                />
+              ))}
+            </div>
 
-      {tab === 1 && (
-        <AssignPage catalog={catalog} owners={owners} onChange={updateOwners} />
-      )}
-
-      {tab === 2 && (
-        <WikiPage catalog={catalog} />
-      )}
+            <section className="flex flex-col gap-2">
+              <Typography variant="h6">{t('ui.results')}</Typography>
+              {calculating && <Typography color="text.secondary">{t('ui.loading')}</Typography>}
+              {results && <ResultList catalog={catalog} results={results} />}
+            </section>
+          </>
+        ))
+        .with(1, () => (
+          <AssignPage catalog={catalog} owners={owners} onChange={updateOwners} />
+        ))
+        .with(2, () => (
+          <WikiPage catalog={catalog} />
+        ))
+        .exhaustive()}
     </div>
   )
 }

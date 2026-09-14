@@ -1,4 +1,5 @@
 import { Array as Arr, Effect, Predicate, pipe } from "effect"
+import { match, P } from "ts-pattern"
 import type { BladeInfo, BladeOwners, Catalog, MemberState } from "../types/common"
 import { canPickFromTeam } from "./availability"
 
@@ -26,27 +27,23 @@ export const criterion = (
 
 export const pass: Criterion = criterion("pass", () => true)
 
-export const and = (...xs: Criterion[]): Criterion => {
-  if (xs.length === 0)
-    return pass
-  if (xs.length === 1)
-    return xs[0]!
-  return criterion(
-    `and(${xs.map(c => c.label).join(", ")})`,
-    Predicate.every(xs.map(c => c.predicate)),
-  )
-}
+const combine = (
+  kind: "and" | "or",
+  join: (preds: Predicate.Predicate<CriterionContext>[]) => Predicate.Predicate<CriterionContext>,
+  xs: Criterion[],
+): Criterion =>
+  match(xs)
+    .with([], () => pass)
+    .with([P.select()], c => c)
+    .otherwise(all =>
+      criterion(`${kind}(${all.map(c => c.label).join(", ")})`, join(all.map(c => c.predicate))),
+    )
 
-export const or = (...xs: Criterion[]): Criterion => {
-  if (xs.length === 0)
-    return pass
-  if (xs.length === 1)
-    return xs[0]!
-  return criterion(
-    `or(${xs.map(c => c.label).join(", ")})`,
-    Predicate.some(xs.map(c => c.predicate)),
-  )
-}
+export const and = (...xs: Criterion[]): Criterion =>
+  combine("and", Predicate.every, xs)
+
+export const or = (...xs: Criterion[]): Criterion =>
+  combine("or", Predicate.some, xs)
 
 export const not = (c: Criterion): Criterion =>
   criterion(`not(${c.label})`, Predicate.not(c.predicate))
@@ -80,25 +77,28 @@ export const niaBladeOk = (niaDriverTaken: boolean): Criterion =>
   criterion(`niaBladeOk(${niaDriverTaken})`, ctx => !(niaDriverTaken && ctx.blade.name === "nia"))
 
 /** Empty list = no restriction (SQL WHERE 1=1). */
+const restrict = (
+  items: readonly string[],
+  label: string,
+  pred: (ctx: CriterionContext, items: readonly string[]) => boolean,
+): Criterion =>
+  match(items)
+    .with([], () => pass)
+    .otherwise(xs => criterion(`${label}(${xs.join("|")})`, ctx => pred(ctx, xs)))
+
 export const anyElement = (elements: readonly string[]): Criterion =>
-  elements.length === 0
-    ? pass
-    : criterion(`anyElement(${elements.join("|")})`, ctx =>
-      ctx.blade.elements.some(el => elements.includes(el)))
+  restrict(elements, "anyElement", (ctx, xs) =>
+    ctx.blade.elements.some(el => xs.includes(el)))
 
 export const anyWeapon = (weapons: readonly string[]): Criterion =>
-  weapons.length === 0
-    ? pass
-    : criterion(`anyWeapon(${weapons.join("|")})`, ctx =>
-      weapons.includes(ctx.blade.weaponName))
+  restrict(weapons, "anyWeapon", (ctx, xs) =>
+    xs.includes(ctx.blade.weaponName))
 
 export const anyEffect = (effects: readonly string[]): Criterion =>
-  effects.length === 0
-    ? pass
-    : criterion(`anyEffect(${effects.join("|")})`, ctx => {
-      const have = ctx.catalog.effectsOf(ctx.driver, ctx.blade.name)
-      return effects.some(eff => have.includes(eff))
-    })
+  restrict(effects, "anyEffect", (ctx, xs) => {
+    const have = ctx.catalog.effectsOf(ctx.driver, ctx.blade.name)
+    return xs.some(eff => have.includes(eff))
+  })
 
 export const manualPick: Criterion = eligible
 
