@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import { Chip, TextField, Typography } from "@mui/material"
+import { match, P } from "ts-pattern"
 import type { Catalog } from "../../../types/common"
 import { fuzzyMatch } from "../../misc/search"
 import { useI18n } from "../../i18n/LanguageContext"
@@ -38,9 +39,12 @@ export default function WeaponEffectsSection(props: { catalog: Catalog }) {
     })).filter(cell => {
       if (effect && !cell.effects.includes(effect))
         return false
-      if (roleMatch === 'on' && !cell.onRole)
-        return false
-      if (roleMatch === 'off' && cell.onRole)
+      const roleOk = match(roleMatch)
+        .with(P.nullish, () => true)
+        .with('on', () => cell.onRole)
+        .with('off', () => !cell.onRole)
+        .exhaustive()
+      if (!roleOk)
         return false
       return fuzzyMatch(query, [
         `driver.${cell.driver}`,
@@ -85,7 +89,10 @@ export default function WeaponEffectsSection(props: { catalog: Catalog }) {
           label={t('ui.roleMatch')}
           value={roleMatch}
           options={[...ROLE_MATCH_OPTIONS]}
-          optionKey={name => name === 'on' ? 'ui.onRole' : 'ui.offRole'}
+          optionKey={name => match(name)
+            .with('on', () => 'ui.onRole')
+            .with('off', () => 'ui.offRole')
+            .exhaustive()}
           onChange={setRoleMatch}
         />
         <TextField
@@ -127,30 +134,30 @@ export default function WeaponEffectsSection(props: { catalog: Catalog }) {
                         <div className="text-xs font-normal text-gray-500">{t(`role.${driverRole}`)}</div>
                       )}
                     </td>
-                    {visible.weaponNames.map(weaponName => {
-                      const cell = visible.cellMap.get(`${driverName}|${weaponName}`)
-                      if (!cell) {
-                        return <td key={weaponName} className="border border-gray-200 p-2" />
-                      }
-                      return (
-                        <td
-                          key={weaponName}
-                          className={`border border-gray-200 p-2 align-top ${cell.onRole ? 'bg-sky-50' : 'bg-amber-50'}`}
-                        >
-                          <div className="flex flex-wrap gap-1">
-                            <Chip
-                              size="small"
-                              color={cell.onRole ? 'primary' : 'warning'}
-                              variant={cell.onRole ? 'filled' : 'outlined'}
-                              label={t(cell.onRole ? 'ui.onRole' : 'ui.offRole')}
-                            />
-                            {cell.effects.map(eff => (
-                              <Chip key={eff} size="small" color="primary" variant="outlined" label={t(`effect.${eff}`)} />
-                            ))}
-                          </div>
-                        </td>
-                      )
-                    })}
+                    {visible.weaponNames.map(weaponName =>
+                      match(visible.cellMap.get(`${driverName}|${weaponName}`))
+                        .with(P.nullish, () => (
+                          <td key={weaponName} className="border border-gray-200 p-2" />
+                        ))
+                        .otherwise(cell => (
+                          <td
+                            key={weaponName}
+                            className={`border border-gray-200 p-2 align-top ${cell.onRole ? 'bg-sky-50' : 'bg-amber-50'}`}
+                          >
+                            <div className="flex flex-wrap gap-1">
+                              <Chip
+                                size="small"
+                                color={cell.onRole ? 'primary' : 'warning'}
+                                variant={cell.onRole ? 'filled' : 'outlined'}
+                                label={t(cell.onRole ? 'ui.onRole' : 'ui.offRole')}
+                              />
+                              {cell.effects.map(eff => (
+                                <Chip key={eff} size="small" color="primary" variant="outlined" label={t(`effect.${eff}`)} />
+                              ))}
+                            </div>
+                          </td>
+                        ))
+                    )}
                   </tr>
                 )
               })}

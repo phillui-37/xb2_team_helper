@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Clear } from "@mui/icons-material"
 import { Checkbox, Chip, FormControl, FormControlLabel, IconButton, InputLabel, MenuItem, Select, TextField } from "@mui/material"
+import { match, P } from "ts-pattern"
 import type { BladeInfo, BladeOwners, Catalog, MemberState, SlotName } from "../../types/common"
 import { holderOf } from "../../model/availability"
 import { NIA } from "../../model/solver"
@@ -189,8 +190,8 @@ export default function MemberColumn(props: MemberColumnProps) {
       {[0, 1, 2].map(slot => {
         const selected = state.blades[slot]
         const locked = !!state.driver && !!selected && catalog.isFixed(state.driver, selected)
-        if (!state.driver) {
-          return (
+        return match({ driver: state.driver, locked })
+          .with({ driver: P.nullish }, () => (
             <TextField
               key={slot}
               size="small"
@@ -198,96 +199,95 @@ export default function MemberColumn(props: MemberColumnProps) {
               value=""
               disabled
             />
-          )
-        }
-        if (locked) {
-          return (
+          ))
+          .with({ driver: P.string, locked: true }, ({ driver }) => (
             <BladeSummary
               key={slot}
               catalog={catalog}
-              driver={state.driver}
-              blade={selected}
+              driver={driver}
+              blade={selected!}
               slot={slot}
               locked
             />
-          )
-        }
-        const driverName = state.driver
-        const options = selectBlades(
-          catalog.blades,
-          { catalog, driver: driverName, owners },
-          or(
-            allowName(selected ?? null),
-            and(
-              eligible,
-              availableFromState(props.members, state.blades),
-              niaBladeOk(props.niaDriverTaken),
-              uiFilters(filter),
-            ),
-          ),
-        ).slice().sort((a, b) => {
-          const aMove = optionMoveRank(catalog, driverName, a.name, props.members)
-          const bMove = optionMoveRank(catalog, driverName, b.name, props.members)
-          if (aMove !== bMove)
-            return aMove - bMove
-          const aOn = catalog.isOnRole(driverName, a.name) ? 0 : 1
-          const bOn = catalog.isOnRole(driverName, b.name) ? 0 : 1
-          if (aOn !== bOn)
-            return aOn - bOn
-          return t(`blade.${a.name}`).localeCompare(t(`blade.${b.name}`), undefined, { sensitivity: 'base' })
-        })
-        return (
-          <div key={slot} className="flex flex-col gap-1">
-            <div className="flex items-center gap-1">
-              <FormControl fullWidth size="small">
-                <InputLabel id={`blade-${props.index}-${slot}`} shrink>{`${t('ui.blade')} ${slot + 1}`}</InputLabel>
-                <Select
-                  labelId={`blade-${props.index}-${slot}`}
-                  label={`${t('ui.blade')} ${slot + 1}`}
-                  value={selected ?? ''}
-                  displayEmpty
-                  notched
-                  onChange={event => setBlade(slot, event.target.value || null)}
-                  renderValue={value => {
-                    if (!value)
-                      return t('ui.empty')
-                    return t(`blade.${value}`)
-                  }}
-                >
-                  <MenuItem value="">{t('ui.empty')}</MenuItem>
-                  {options.map(b => {
-                    const offRole = !catalog.isOnRole(driverName, b.name)
-                    const dedicated = catalog.dedicatedDrivers(b.name)
-                    const holder = holderOf(props.members, b.name)
-                    const borrowed = dedicated.length > 0 && !dedicated.includes(driverName)
-                    const reclaim = !!holder && holder !== driverName && dedicated.includes(driverName)
-                    const details = bladeSelectDetails(t, b, offRole, borrowed, reclaim)
-                    return (
-                      <MenuItem key={b.name} value={b.name} sx={{ whiteSpace: 'normal' }}>
-                        <div className="flex min-w-0 flex-col py-0.5">
-                          <span className="leading-tight">{t(`blade.${b.name}`)}</span>
-                          <span className="text-xs leading-tight text-gray-500">{details}</span>
-                        </div>
-                      </MenuItem>
-                    )
-                  })}
-                </Select>
-              </FormControl>
-              {selected && (
-                <IconButton
-                  size="small"
-                  aria-label={t('ui.clear')}
-                  onClick={() => setBlade(slot, null)}
-                >
-                  <Clear fontSize="small" />
-                </IconButton>
-              )}
-            </div>
-            {selected && (
-              <BladeChips catalog={catalog} driver={state.driver} blade={selected} />
-            )}
-          </div>
-        )
+          ))
+          .with({ driver: P.string }, ({ driver: driverName }) => {
+            const options = selectBlades(
+              catalog.blades,
+              { catalog, driver: driverName, owners },
+              or(
+                allowName(selected ?? null),
+                and(
+                  eligible,
+                  availableFromState(props.members, state.blades),
+                  niaBladeOk(props.niaDriverTaken),
+                  uiFilters(filter),
+                ),
+              ),
+            ).slice().sort((a, b) => {
+              const aMove = optionMoveRank(catalog, driverName, a.name, props.members)
+              const bMove = optionMoveRank(catalog, driverName, b.name, props.members)
+              if (aMove !== bMove)
+                return aMove - bMove
+              const aOn = catalog.isOnRole(driverName, a.name) ? 0 : 1
+              const bOn = catalog.isOnRole(driverName, b.name) ? 0 : 1
+              if (aOn !== bOn)
+                return aOn - bOn
+              return t(`blade.${a.name}`).localeCompare(t(`blade.${b.name}`), undefined, { sensitivity: 'base' })
+            })
+            return (
+              <div key={slot} className="flex flex-col gap-1">
+                <div className="flex items-center gap-1">
+                  <FormControl fullWidth size="small">
+                    <InputLabel id={`blade-${props.index}-${slot}`} shrink>{`${t('ui.blade')} ${slot + 1}`}</InputLabel>
+                    <Select
+                      labelId={`blade-${props.index}-${slot}`}
+                      label={`${t('ui.blade')} ${slot + 1}`}
+                      value={selected ?? ''}
+                      displayEmpty
+                      notched
+                      onChange={event => setBlade(slot, event.target.value || null)}
+                      renderValue={value => {
+                        if (!value)
+                          return t('ui.empty')
+                        return t(`blade.${value}`)
+                      }}
+                    >
+                      <MenuItem value="">{t('ui.empty')}</MenuItem>
+                      {options.map(b => {
+                        const offRole = !catalog.isOnRole(driverName, b.name)
+                        const dedicated = catalog.dedicatedDrivers(b.name)
+                        const holder = holderOf(props.members, b.name)
+                        const borrowed = dedicated.length > 0 && !dedicated.includes(driverName)
+                        const reclaim = !!holder && holder !== driverName && dedicated.includes(driverName)
+                        const details = bladeSelectDetails(t, b, offRole, borrowed, reclaim)
+                        return (
+                          <MenuItem key={b.name} value={b.name} sx={{ whiteSpace: 'normal' }}>
+                            <div className="flex min-w-0 flex-col py-0.5">
+                              <span className="leading-tight">{t(`blade.${b.name}`)}</span>
+                              <span className="text-xs leading-tight text-gray-500">{details}</span>
+                            </div>
+                          </MenuItem>
+                        )
+                      })}
+                    </Select>
+                  </FormControl>
+                  {selected && (
+                    <IconButton
+                      size="small"
+                      aria-label={t('ui.clear')}
+                      onClick={() => setBlade(slot, null)}
+                    >
+                      <Clear fontSize="small" />
+                    </IconButton>
+                  )}
+                </div>
+                {selected && (
+                  <BladeChips catalog={catalog} driver={driverName} blade={selected} />
+                )}
+              </div>
+            )
+          })
+          .exhaustive()
       })}
     </div>
   )
@@ -301,14 +301,14 @@ function optionMoveRank(
   blade: string,
   members: readonly MemberState[],
 ): number {
-  const holder = holderOf(members, blade)
-  if (!holder || holder === driver)
-    return 1
-  if (catalog.isForeignBound(driver, blade))
-    return 0
-  if (catalog.dedicatedDrivers(blade).includes(driver))
-    return 0
-  return 1
+  return match(holderOf(members, blade))
+    .with(P.union(P.nullish, driver), () => 1)
+    .when(
+      () => catalog.isForeignBound(driver, blade)
+        || catalog.dedicatedDrivers(blade).includes(driver),
+      () => 0,
+    )
+    .otherwise(() => 1)
 }
 
 function bladeSelectDetails(

@@ -1,10 +1,17 @@
 import { useMemo, useState } from "react"
 import { ExpandMore } from "@mui/icons-material"
 import { Accordion, AccordionDetails, AccordionSummary, Chip, TextField, Typography } from "@mui/material"
-import type { Catalog, CharacterGift } from "../../../types/common"
+import { match } from "ts-pattern"
+import type { Catalog, CharacterGift, GiftOwnerType } from "../../../types/common"
 import { fuzzyMatch } from "../../misc/search"
 import { useI18n } from "../../i18n/LanguageContext"
 import WikiAutocomplete from "./WikiAutocomplete"
+
+const ownerTypeKey = (ownerType: GiftOwnerType) =>
+  match(ownerType)
+    .with('driver', () => 'ui.ownerTypeDriver')
+    .with('blade', () => 'ui.ownerTypeBlade')
+    .exhaustive()
 
 function giftLabelKeys(gift: CharacterGift): string[] {
   const keys = [
@@ -129,7 +136,7 @@ export default function BladeGiftsSection(props: { catalog: Catalog }) {
                   </Typography>
                   <Chip
                     size="small"
-                    label={t(gift.ownerType === 'driver' ? 'ui.ownerTypeDriver' : 'ui.ownerTypeBlade')}
+                    label={t(ownerTypeKey(gift.ownerType))}
                   />
                 </div>
                 <div className="flex flex-wrap gap-1">

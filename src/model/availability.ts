@@ -1,3 +1,4 @@
+import { match, P } from "ts-pattern"
 import type { Catalog, MemberState } from "../types/common"
 
 /** Driver currently holding this blade, if any. */
@@ -26,15 +27,17 @@ export const canPickFromTeam = (
 ): boolean => {
   if (heldByDriver.includes(blade))
     return false
-  const holder = holderOf(members, blade)
-  if (!holder)
-    return true
-  if (holder === driver)
-    return false
-  // Rex takes a unique blade from whoever currently has it.
-  if (catalog.canBorrowBound(driver, blade) && catalog.isForeignBound(driver, blade))
-    return true
-  // Dedicated driver returns a unique blade that Rex currently holds.
-  return catalog.canBorrowBound(holder, blade)
-    && catalog.dedicatedDrivers(blade).includes(driver)
+  return match(holderOf(members, blade))
+    .with(P.nullish, () => true)
+    .with(driver, () => false)
+    .when(
+      () => catalog.canBorrowBound(driver, blade) && catalog.isForeignBound(driver, blade),
+      () => true,
+    )
+    .when(
+      holder => catalog.canBorrowBound(holder, blade)
+        && catalog.dedicatedDrivers(blade).includes(driver),
+      () => true,
+    )
+    .otherwise(() => false)
 }

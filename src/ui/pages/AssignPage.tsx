@@ -1,8 +1,16 @@
 import { useMemo, useState } from "react"
 import { Chip, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material"
-import type { Catalog } from "../../types/common"
+import { match } from "ts-pattern"
+import type { BladeSource, Catalog } from "../../types/common"
 import { useI18n } from "../i18n/LanguageContext"
 import { fuzzyFilterOptions } from "../misc/search"
+
+const sourceLabelKey = (source: BladeSource) =>
+  match(source)
+    .with('FIXED', () => 'ui.sourceFixed')
+    .with('BINDED', () => 'ui.sourceBinded')
+    .with('FREE', () => 'ui.sourceFree')
+    .exhaustive()
 
 export default function AssignPage(props: {
   catalog: Catalog
@@ -43,13 +51,12 @@ export default function AssignPage(props: {
           const locked = catalog.isAssignmentLocked(blade.name)
           const dedicated = catalog.dedicatedDrivers(blade.name)
           const source = catalog.bladeSource(blade.name)
-          const sourceKey = source === 'FIXED' ? 'ui.sourceFixed' : source === 'BINDED' ? 'ui.sourceBinded' : 'ui.sourceFree'
           return (
             <div key={blade.name} className="flex flex-col gap-2 rounded-lg border border-gray-200 p-3 md:flex-row md:items-center">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <Typography variant="subtitle2">{t(`blade.${blade.name}`)}</Typography>
-                  <Chip size="small" label={t(sourceKey)} />
+                  <Chip size="small" label={t(sourceLabelKey(source))} />
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1">
                   <Chip size="small" variant="outlined" color="secondary" label={t(`weapon.${blade.weaponName}`)} />
