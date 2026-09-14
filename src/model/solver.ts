@@ -80,6 +80,11 @@ function popcount(mask: number): number {
   return c
 }
 
+/** Driver + slot identity for a completed team. */
+export function teamMemoKey(members: TeamMember[]): string {
+  return members.map(m => `${m.driver}:${m.blades.join(",")}`).join("|")
+}
+
 function cloneWorks(works: DriverWork[]): DriverWork[] {
   return works.map(work => ({
     driver: work.driver,
@@ -247,73 +252,72 @@ export function solve(
 
   works.sort((a, b) => a.emptyIdx.length - b.emptyIdx.length)
 
-  const results: TeamResult[] = []
-  const search = (
-    planned: DriverWork[],
-    driverOrd: number,
-    usedMask: bigint,
-    elem: number,
-    effectCounts: [number, number, number, number],
-    filled: Map<string, string[]>,
-    resultCap: number,
-  ) => {
-    if (results.length >= resultCap)
-      return
-    if (driverOrd === planned.length) {
-      if (elem === catalog.allElementsMask && effectCounts.every(c => c >= need)) {
-        const team: TeamMember[] = members.map(m => {
-          const driver = m.driver as string
-          const blades = filled.get(driver) as string[]
-          return { driver, blades: [blades[0] as string, blades[1] as string, blades[2] as string] }
-        })
-        results.push({ members: team, elementMask: elem, effectCounts: [...effectCounts] })
-      }
-      return
-    }
+  const collectPlan = (planned: DriverWork[], resultCap: number): TeamResult[] => {
+    const found: TeamResult[] = []
+    if (resultCap <= 0)
+      return found
 
-    let remainingSlots = 0
-    for (let i = driverOrd; i < planned.length; i++)
-      remainingSlots += planned[i]!.emptyIdx.length
-    const missingElem = popcount(catalog.allElementsMask & ~elem)
-    const missingEff = effectCounts.reduce((sum, c) => sum + Math.max(0, need - c), 0)
-    if (remainingSlots * 2 < missingElem || remainingSlots * 2 < missingEff)
-      return
-
-    const work = planned[driverOrd] as DriverWork
-    const available = catalog.solverCandidatesFor(work.driver, owners, work.matchRole).filter(b => {
-      if ((usedMask & (1n << BigInt(b.index))) !== 0n)
-        return false
-      if (niaDriverPicked && b.name === NIA)
-        return false
-      if (!work.borrowBound && catalog.isForeignBound(work.driver, b.name))
-        return false
-      return true
-    })
-    const combos = combinations(available, work.emptyIdx.length)
-
-    for (const combo of combos) {
-      if (results.length >= resultCap)
+    const search = (
+      driverOrd: number,
+      usedMask: bigint,
+      elem: number,
+      effectCounts: [number, number, number, number],
+      filled: Map<string, string[]>,
+    ) => {
+      if (found.length >= resultCap)
         return
-      let nextMask = usedMask
-      let nextElem = elem
-      let nextEffects = effectCounts
-      const slots = [...work.locked]
-      for (let i = 0; i < combo.length; i++) {
-        const blade = combo[i]!
-        const slot = work.emptyIdx[i] as number
-        slots[slot] = blade.name
-        nextMask |= 1n << BigInt(blade.index)
-        nextElem |= blade.elementMask
-        nextEffects = addEffects(nextEffects, effectDelta(catalog, work.driver, blade.name))
+      if (driverOrd === planned.length) {
+        if (elem === catalog.allElementsMask && effectCounts.every(c => c >= need)) {
+          const team: TeamMember[] = members.map(m => {
+            const driver = m.driver as string
+            const blades = filled.get(driver) as string[]
+            return { driver, blades: [blades[0] as string, blades[1] as string, blades[2] as string] }
+          })
+          found.push({ members: team, elementMask: elem, effectCounts: [...effectCounts] })
+        }
+        return
       }
-      filled.set(work.driver, slots.map(s => s as string))
-      search(planned, driverOrd + 1, nextMask, nextElem, nextEffects, filled, resultCap)
-    }
-  }
 
-  const runPlan = (planned: DriverWork[], resultCap: number) => {
-    if (results.length >= resultCap)
-      return
+      let remainingSlots = 0
+      for (let i = driverOrd; i < planned.length; i++)
+        remainingSlots += planned[i]!.emptyIdx.length
+      const missingElem = popcount(catalog.allElementsMask & ~elem)
+      const missingEff = effectCounts.reduce((sum, c) => sum + Math.max(0, need - c), 0)
+      if (remainingSlots * 2 < missingElem || remainingSlots * 2 < missingEff)
+        return
+
+      const work = planned[driverOrd] as DriverWork
+      const available = catalog.solverCandidatesFor(work.driver, owners, work.matchRole).filter(b => {
+        if ((usedMask & (1n << BigInt(b.index))) !== 0n)
+          return false
+        if (niaDriverPicked && b.name === NIA)
+          return false
+        if (!work.borrowBound && catalog.isForeignBound(work.driver, b.name))
+          return false
+        return true
+      })
+      const combos = combinations(available, work.emptyIdx.length)
+
+      for (const combo of combos) {
+        if (found.length >= resultCap)
+          return
+        let nextMask = usedMask
+        let nextElem = elem
+        let nextEffects = effectCounts
+        const slots = [...work.locked]
+        for (let i = 0; i < combo.length; i++) {
+          const blade = combo[i]!
+          const slot = work.emptyIdx[i] as number
+          slots[slot] = blade.name
+          nextMask |= 1n << BigInt(blade.index)
+          nextElem |= blade.elementMask
+          nextEffects = addEffects(nextEffects, effectDelta(catalog, work.driver, blade.name))
+        }
+        filled.set(work.driver, slots.map(s => s as string))
+        search(driverOrd + 1, nextMask, nextElem, nextEffects, filled)
+      }
+    }
+
     let startMask = 0n
     let startElem = 0
     let startEffects: [number, number, number, number] = [0, 0, 0, 0]
@@ -322,7 +326,8 @@ export function solve(
       startElem |= work.lockedElem
       startEffects = addEffects(startEffects, work.lockedEffects)
     }
-    search(planned, 0, startMask, startElem, startEffects, new Map(), resultCap)
+    search(0, startMask, startElem, startEffects, new Map())
+    return found
   }
 
   const steal = collectStealable(catalog, works, owners)
@@ -339,10 +344,37 @@ export function solve(
     return applySteals(catalog, works, steal!.borrower, plan)
   }).filter((planned): planned is DriverWork[] => !!planned)
 
+  // Fair share first so one steal plan cannot fill RESULT_CAP alone. A plan that
+  // returns fewer than `quota` is exhausted; only capped plans are continued.
+  // Continuation restarts DFS, so skip the teams already taken from that plan
+  // instead of pushing them again.
   const quota = Math.max(1, Math.floor(RESULT_CAP / Math.max(1, prepared.length)))
-  for (const planned of prepared)
-    runPlan(planned, Math.min(RESULT_CAP, results.length + quota))
-  for (const planned of prepared)
-    runPlan(planned, RESULT_CAP)
+  const buckets = prepared.map(planned => collectPlan(planned, quota))
+  const results: TeamResult[] = []
+  const seen = new Set<string>()
+  const take = (team: TeamResult) => {
+    if (results.length >= RESULT_CAP)
+      return
+    const key = teamMemoKey(team.members)
+    if (seen.has(key))
+      return
+    seen.add(key)
+    results.push(team)
+  }
+  for (const bucket of buckets)
+    for (const team of bucket)
+      take(team)
+  if (results.length < RESULT_CAP) {
+    for (let i = 0; i < prepared.length; i++) {
+      if (results.length >= RESULT_CAP)
+        break
+      const already = buckets[i]!.length
+      if (already < quota)
+        continue
+      const more = collectPlan(prepared[i]!, RESULT_CAP)
+      for (const team of more.slice(already))
+        take(team)
+    }
+  }
   return results
 }
