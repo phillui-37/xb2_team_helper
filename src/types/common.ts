@@ -11,6 +11,7 @@ export type MemberState = {
   blades: [SlotName, SlotName, SlotName]
   matchRole: boolean
   borrowBound: boolean
+  uniqueWeapon: boolean
 }
 
 export type BladeInfo = {

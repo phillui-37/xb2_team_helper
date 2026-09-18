@@ -7,6 +7,7 @@ type DriverWork = {
   driver: string
   matchRole: boolean
   borrowBound: boolean
+  uniqueWeapon: boolean
   locked: (string | null)[]
   emptyIdx: number[]
   lockedElem: number
@@ -90,12 +91,32 @@ function cloneWorks(works: DriverWork[]): DriverWork[] {
     driver: work.driver,
     matchRole: work.matchRole,
     borrowBound: work.borrowBound,
+    uniqueWeapon: work.uniqueWeapon,
     locked: [...work.locked],
     emptyIdx: [...work.emptyIdx],
     lockedElem: work.lockedElem,
     lockedEffects: [...work.lockedEffects] as [number, number, number, number],
     lockedMask: work.lockedMask,
   }))
+}
+
+function weaponOf(catalog: Catalog, blade: string | null): string | undefined {
+  if (!blade)
+    return undefined
+  return catalog.bladeByName.get(blade)?.weaponName
+}
+
+function hasDuplicateWeapon(catalog: Catalog, names: readonly (string | null)[]): boolean {
+  const seen = new Set<string>()
+  for (const name of names) {
+    const weapon = weaponOf(catalog, name)
+    if (!weapon)
+      continue
+    if (seen.has(weapon))
+      return true
+    seen.add(weapon)
+  }
+  return false
 }
 
 function recomputeLocked(catalog: Catalog, work: DriverWork): void {
@@ -242,6 +263,7 @@ export function solve(
       driver,
       matchRole: member.matchRole,
       borrowBound: member.borrowBound,
+      uniqueWeapon: member.uniqueWeapon,
       locked: [...member.blades],
       emptyIdx,
       lockedElem,
@@ -287,12 +309,24 @@ export function solve(
         return
 
       const work = planned[driverOrd] as DriverWork
+      if (work.uniqueWeapon && hasDuplicateWeapon(catalog, work.locked))
+        return
+      const lockedWeapons = new Set<string>()
+      if (work.uniqueWeapon) {
+        for (const name of work.locked) {
+          const weapon = weaponOf(catalog, name)
+          if (weapon)
+            lockedWeapons.add(weapon)
+        }
+      }
       const available = catalog.solverCandidatesFor(work.driver, owners, work.matchRole).filter(b => {
         if ((usedMask & (1n << BigInt(b.index))) !== 0n)
           return false
         if (niaDriverPicked && b.name === NIA)
           return false
         if (!work.borrowBound && catalog.isForeignBound(work.driver, b.name))
+          return false
+        if (work.uniqueWeapon && lockedWeapons.has(b.weaponName))
           return false
         return true
       })
@@ -301,6 +335,8 @@ export function solve(
       for (const combo of combos) {
         if (found.length >= resultCap)
           return
+        if (work.uniqueWeapon && hasDuplicateWeapon(catalog, combo.map(b => b.name)))
+          continue
         let nextMask = usedMask
         let nextElem = elem
         let nextEffects = effectCounts

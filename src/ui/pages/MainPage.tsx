@@ -18,6 +18,7 @@ const emptyMember = (): MemberState => ({
   blades: [null, null, null],
   matchRole: true,
   borrowBound: true,
+  uniqueWeapon: true,
 })
 
 export default function MainPage() {

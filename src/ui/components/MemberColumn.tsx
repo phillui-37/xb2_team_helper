@@ -102,6 +102,7 @@ export default function MemberColumn(props: MemberColumnProps) {
       blades,
       matchRole: catalog.isBindsOnly(driver) ? true : state.matchRole,
       borrowBound: !!info?.canUseForeign && (canBorrow ? state.borrowBound : true),
+      uniqueWeapon: catalog.isBindsOnly(driver) ? true : state.uniqueWeapon,
     })
   }
 
@@ -137,15 +138,26 @@ export default function MemberColumn(props: MemberColumnProps) {
       </FormControl>
 
       {state.driver && !catalog.isBindsOnly(state.driver) && (
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={state.matchRole}
-              onChange={event => props.onChange({ ...state, matchRole: event.target.checked })}
-            />
-          }
-          label={t('ui.matchRole')}
-        />
+        <>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={state.matchRole}
+                onChange={event => props.onChange({ ...state, matchRole: event.target.checked })}
+              />
+            }
+            label={t('ui.matchRole')}
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={state.uniqueWeapon}
+                onChange={event => props.onChange({ ...state, uniqueWeapon: event.target.checked })}
+              />
+            }
+            label={t('ui.uniqueWeapon')}
+          />
+        </>
       )}
       {canBorrow && (
         <FormControlLabel
