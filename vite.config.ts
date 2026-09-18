@@ -1,8 +1,10 @@
 import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { VitePWA } from 'vite-plugin-pwa'
 
 const BASE_PATH = '/xb2/'
+const THEME_COLOR = '#123462'
 
 function inlineCssInJs(): Plugin {
   return {
@@ -32,7 +34,53 @@ function inlineCssInJs(): Plugin {
 
 export default defineConfig({
   base: BASE_PATH,
-  plugins: [react(), tailwindcss(), inlineCssInJs()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    inlineCssInJs(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      injectRegister: false,
+      includeManifestIcons: false,
+      manifest: {
+        id: BASE_PATH,
+        name: 'Xenoblade 2 Team Helper',
+        short_name: 'XB2 Helper',
+        description: 'Xenoblade 2 team calculator',
+        theme_color: THEME_COLOR,
+        background_color: THEME_COLOR,
+        display: 'standalone',
+        start_url: BASE_PATH,
+        scope: BASE_PATH,
+        lang: 'en',
+        icons: [
+          {
+            src: 'icons/pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: 'icons/pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
+            src: 'icons/pwa-512x512-maskable.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,html,ico,png,svg,wasm,data}'],
+        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
+        navigateFallback: 'index.html',
+      },
+    }),
+  ],
   optimizeDeps: {
     exclude: ['@electric-sql/pglite'],
   },
