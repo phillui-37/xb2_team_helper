@@ -46,7 +46,14 @@
     "claws": "ナックルクロー",
     "nia": "シミター",
     "shulk": "モナド",
-    "elma": "デュアルソード"
+    "elma": "デュアルソード",
+    "calamity scythe": "鎌",
+    "cobra bardiche": "薙刀",
+    "infinity fans": "扇",
+    "brilliant twinblades": "小太刀",
+    "decimation cannon": "大筒",
+    "rockrending gauntlets": "手甲",
+    "sword tonfa": "旋棍"
   },
   "blade": {
     "seihai": "天の聖杯",
@@ -93,12 +100,21 @@
     "fiora": "フィオルン",
     "shulk": "シュルク",
     "elma": "エルマ",
-    "kamuya": "カムヤ"
+    "kamuya": "カムヤ",
+    "yoshitsune": "ヨシツネ",
+    "benkei": "ベンケイ",
+    "satahiko": "サタヒコ",
+    "kamui": "カムイ",
+    "ragou": "ラゴウ",
+    "ootsuchi": "オオツチ",
+    "zantetsu": "ザンテツ"
   },
   "ui": {
     "title": "ゼノブレイド2 編成計算",
     "calculate": "計算",
     "redundancy": "各効果を2本",
+    "advancedNewGame": "アドバンスドニューゲーム",
+    "angTag": "2周目",
     "driver": "ドライバー",
     "blade": "ブレイド",
     "empty": "（空）",

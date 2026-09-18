@@ -1,7 +1,7 @@
 import { solve, teamMemoKey } from "../src/model/solver.ts"
 import type { BladeInfo, Catalog, DriverInfo, MemberState, TeamMember } from "../src/types/common.ts"
 
-function blade(name: string, index: number, elementMask = 1): BladeInfo {
+function blade(name: string, index: number, elementMask = 1, advancedNewGame = false): BladeInfo {
   return {
     id: index,
     name,
@@ -10,6 +10,7 @@ function blade(name: string, index: number, elementMask = 1): BladeInfo {
     elements: ["fire"],
     elementMask,
     index,
+    advancedNewGame,
   }
 }
 
@@ -99,7 +100,26 @@ const threeFill = solve(threeCandidates, members, true, new Map())
 assert(threeFill.length === 3, `expected 3 distinct teams, got ${threeFill.length}`)
 assert(uniqueKeys(threeFill).length === 3, "three fills must stay distinct and not double-emitted")
 
+const angBlade = blade("yoshitsune", 11, 1, true)
+const angCatalog = mockCatalog({
+  blades: [...locked, fills[0]!, angBlade],
+  drivers,
+  effectsOf,
+  candidates: [fills[0]!, angBlade],
+})
+const angOff = solve(angCatalog, members, true, new Map(), false)
+assert(angOff.length === 1, `expected 1 team with ANG off, got ${angOff.length}`)
+assert(angOff[0]?.members[2]?.blades[2] === "fill-8", "ANG blade must stay hidden when the option is off")
+const angOn = solve(angCatalog, members, true, new Map(), true)
+assert(angOn.length === 2, `expected 2 teams with ANG on, got ${angOn.length}`)
+assert(
+  uniqueKeys(angOn).some(key => key.includes("yoshitsune")),
+  "ANG blade should fill a slot when the option is on",
+)
+
 console.log("solver duplicate checks passed", {
   screenshotLike: oneFill.length,
   threeCandidates: threeFill.length,
+  angOff: angOff.length,
+  angOn: angOn.length,
 })

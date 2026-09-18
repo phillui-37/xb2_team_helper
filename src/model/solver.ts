@@ -205,6 +205,7 @@ export function solve(
   members: MemberState[],
   redundancy: boolean,
   owners: BladeOwners,
+  advancedNewGame = false,
 ): TeamResult[] {
   if (members.length !== 3 || members.some(m => !m.driver))
     return []
@@ -293,6 +294,8 @@ export function solve(
         if (niaDriverPicked && b.name === NIA)
           return false
         if (!work.borrowBound && catalog.isForeignBound(work.driver, b.name))
+          return false
+        if (b.advancedNewGame && !advancedNewGame)
           return false
         return true
       })

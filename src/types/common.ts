@@ -21,6 +21,7 @@ export type BladeInfo = {
   elements: string[]
   elementMask: number
   index: number
+  advancedNewGame: boolean
 }
 
 export type DriverInfo = {
