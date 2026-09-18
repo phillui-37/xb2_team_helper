@@ -1,11 +1,17 @@
 import { solve, teamMemoKey } from "../src/model/solver.ts"
 import type { BladeInfo, Catalog, DriverInfo, MemberState, TeamMember } from "../src/types/common.ts"
 
-function blade(name: string, index: number, elementMask = 1, advancedNewGame = false): BladeInfo {
+function blade(
+  name: string,
+  index: number,
+  elementMask = 1,
+  weaponName = "w",
+  advancedNewGame = false,
+): BladeInfo {
   return {
     id: index,
     name,
-    weaponName: "w",
+    weaponName,
     weaponRole: "Attacker",
     elements: ["fire"],
     elementMask,
@@ -64,10 +70,22 @@ const effectsOf = (d: string, b: string): string[] => {
   return []
 }
 
+const member = (
+  driver: string,
+  blades: MemberState["blades"],
+  opts: Partial<Pick<MemberState, "matchRole" | "borrowBound" | "uniqueWeapon">> = {},
+): MemberState => ({
+  driver,
+  blades,
+  matchRole: opts.matchRole ?? true,
+  borrowBound: opts.borrowBound ?? false,
+  uniqueWeapon: opts.uniqueWeapon ?? false,
+})
+
 const members: MemberState[] = [
-  { driver: "rex", blades: ["seihai", "nia-blade", "corvin"], matchRole: true, borrowBound: true },
-  { driver: "merefu", blades: ["kaguduchi", "wadatumi", "kasandra"], matchRole: true, borrowBound: false },
-  { driver: "zig", blades: ["saika", "wulfric", null], matchRole: true, borrowBound: false },
+  member("rex", ["seihai", "nia-blade", "corvin"], { borrowBound: true }),
+  member("merefu", ["kaguduchi", "wadatumi", "kasandra"]),
+  member("zig", ["saika", "wulfric", null]),
 ]
 
 function uniqueKeys(teams: { members: TeamMember[] }[]): string[] {
@@ -100,7 +118,66 @@ const threeFill = solve(threeCandidates, members, true, new Map())
 assert(threeFill.length === 3, `expected 3 distinct teams, got ${threeFill.length}`)
 assert(uniqueKeys(threeFill).length === 3, "three fills must stay distinct and not double-emitted")
 
-const angBlade = blade("yoshitsune", 11, 1, true)
+const uniqueLocked = [
+  blade("seihai", 0, 1, "aegis"),
+  blade("nia-blade", 1, 1, "scimitar"),
+  blade("corvin", 2, 1, "uchigatana"),
+  blade("kaguduchi", 3, 1, "katana"),
+  blade("wadatumi", 4, 1, "lance"),
+  blade("kasandra", 5, 1, "hammer"),
+  blade("saika", 6, 1, "bigbang"),
+  blade("wulfric", 7, 1, "axe"),
+]
+const fillSame = blade("fill-same", 8, 1, "bigbang")
+const fillNew = blade("fill-new", 9, 1, "cannon")
+const uniqueMembers: MemberState[] = [
+  member("rex", ["seihai", "nia-blade", "corvin"], { borrowBound: true, uniqueWeapon: true }),
+  member("merefu", ["kaguduchi", "wadatumi", "kasandra"], { uniqueWeapon: true }),
+  member("zig", ["saika", "wulfric", null], { uniqueWeapon: true }),
+]
+const uniqueCatalog = mockCatalog({
+  blades: [...uniqueLocked, fillSame, fillNew],
+  drivers,
+  effectsOf,
+  candidates: [fillSame, fillNew],
+})
+const uniqueOn = solve(uniqueCatalog, uniqueMembers, true, new Map())
+assert(uniqueOn.length === 1, `unique weapon on: expected 1 team, got ${uniqueOn.length}`)
+assert(uniqueOn[0]?.members[2]?.blades[2] === "fill-new", "duplicate weapon fill must be rejected")
+
+const uniqueOff = solve(
+  uniqueCatalog,
+  uniqueMembers.map(m => m.driver === "zig" ? { ...m, uniqueWeapon: false } : m),
+  true,
+  new Map(),
+)
+assert(uniqueOff.length === 2, `unique weapon off: expected 2 teams, got ${uniqueOff.length}`)
+
+const twinA = blade("twin-a", 10, 1, "twin")
+const twinB = blade("twin-b", 11, 1, "twin")
+const otherFill = blade("other-a", 12, 1, "other")
+const twoEmpty: MemberState[] = [
+  member("rex", ["seihai", "nia-blade", "corvin"], { borrowBound: true, uniqueWeapon: true }),
+  member("merefu", ["kaguduchi", "wadatumi", "kasandra"], { uniqueWeapon: true }),
+  member("zig", ["saika", null, null], { uniqueWeapon: true }),
+]
+const comboCatalog = mockCatalog({
+  blades: [...uniqueLocked, twinA, twinB, otherFill],
+  drivers,
+  effectsOf,
+  candidates: [twinA, twinB, otherFill],
+})
+const comboFill = solve(comboCatalog, twoEmpty, true, new Map())
+assert(comboFill.length === 2, `combo unique weapon: expected 2 teams, got ${comboFill.length}`)
+assert(
+  comboFill.every(team => {
+    const blades = team.members[2]?.blades ?? []
+    return blades.includes("other-a") && (blades.includes("twin-a") || blades.includes("twin-b"))
+  }),
+  "combo fills must pair the distinct weapon, not two twins",
+)
+
+const angBlade = blade("yoshitsune", 11, 1, "w", true)
 const angCatalog = mockCatalog({
   blades: [...locked, fills[0]!, angBlade],
   drivers,
@@ -120,6 +197,9 @@ assert(
 console.log("solver duplicate checks passed", {
   screenshotLike: oneFill.length,
   threeCandidates: threeFill.length,
+  uniqueWeaponOn: uniqueOn.length,
+  uniqueWeaponOff: uniqueOff.length,
+  uniqueWeaponCombo: comboFill.length,
   angOff: angOff.length,
   angOn: angOn.length,
 })

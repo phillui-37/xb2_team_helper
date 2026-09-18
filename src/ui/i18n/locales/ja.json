@@ -129,6 +129,7 @@
     "onRole": "オン",
     "roleMatch": "ロール",
     "matchRole": "ロール一致",
+    "uniqueWeapon": "武器種重複なし",
     "borrowBound": "他ドライバーの専用を使用",
     "borrowed": "借用",
     "reclaim": "返却",

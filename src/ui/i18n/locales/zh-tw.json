@@ -129,6 +129,7 @@
     "onRole": "本職",
     "roleMatch": "本職",
     "matchRole": "符合本職",
+    "uniqueWeapon": "武器不重複",
     "borrowBound": "使用其他劍主專用",
     "borrowed": "借用",
     "reclaim": "歸還",

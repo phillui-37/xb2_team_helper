@@ -129,6 +129,7 @@
     "onRole": "On-role",
     "roleMatch": "Role",
     "matchRole": "Match role",
+    "uniqueWeapon": "No duplicate weapon",
     "borrowBound": "Use others' unique blades",
     "borrowed": "Borrowed",
     "reclaim": "Return",
