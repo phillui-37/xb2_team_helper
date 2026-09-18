@@ -92,7 +92,7 @@ export default function MemberColumn(props: MemberColumnProps) {
   const setDriver = (driver: string) => {
     const info = catalog.driverByName.get(driver)
     const blades: [SlotName, SlotName, SlotName] = [null, null, null]
-    // Prefill unused fixed blades; slots stay editable so the user can replace them.
+    // Prefill unused fixed blades. Tora's Poppi stay locked; other drivers can replace them.
     info?.fixedBlades.forEach((name, i) => {
       if (i < 3 && !usedByOthers.has(name))
         blades[i] = name
@@ -159,7 +159,7 @@ export default function MemberColumn(props: MemberColumnProps) {
         />
       )}
 
-      {state.driver && (
+      {state.driver && !catalog.isBindsOnly(state.driver) && (
         <div className="flex flex-col gap-2">
           <FilterSelect
             id={`element-${props.index}`}
@@ -190,8 +190,12 @@ export default function MemberColumn(props: MemberColumnProps) {
 
       {[0, 1, 2].map(slot => {
         const selected = state.blades[slot]
-        return match(state.driver)
-          .with(P.nullish, () => (
+        const locked = !!state.driver
+          && catalog.isBindsOnly(state.driver)
+          && !!selected
+          && catalog.isFixed(state.driver, selected)
+        return match({ driver: state.driver, locked })
+          .with({ driver: P.nullish }, () => (
             <TextField
               key={slot}
               size="small"
@@ -200,7 +204,16 @@ export default function MemberColumn(props: MemberColumnProps) {
               disabled
             />
           ))
-          .with(P.string, driverName => {
+          .with({ driver: P.string, locked: true }, ({ driver }) => (
+            <BladeSummary
+              key={slot}
+              catalog={catalog}
+              driver={driver}
+              blade={selected!}
+              slot={slot}
+            />
+          ))
+          .with({ driver: P.string }, ({ driver: driverName }) => {
             const options = selectBlades(
               catalog.blades,
               { catalog, driver: driverName, owners },
@@ -357,6 +370,26 @@ function FilterSelect(props: {
         ))}
       </Select>
     </FormControl>
+  )
+}
+
+function BladeSummary(props: {
+  catalog: Catalog
+  driver: string
+  blade: string
+  slot: number
+}) {
+  const { t } = useI18n()
+  return (
+    <div className="flex flex-col gap-1">
+      <TextField
+        size="small"
+        label={`${t('ui.blade')} ${props.slot + 1}`}
+        value={t(`blade.${props.blade}`)}
+        slotProps={{ input: { readOnly: true } }}
+      />
+      <BladeChips catalog={props.catalog} driver={props.driver} blade={props.blade} />
+    </div>
   )
 }
 

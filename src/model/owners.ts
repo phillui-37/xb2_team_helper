@@ -91,5 +91,19 @@ export const reconcileMembers = (
         claimed.add(blade)
     }
   }
-  return sanitized.map((member, i) => ({ ...member, blades: slots[i]! }))
+  const next = sanitized.map((member, i) => ({ ...member, blades: slots[i]! }))
+  for (const member of next) {
+    if (!member.driver || !catalog.isBindsOnly(member.driver))
+      continue
+    for (const name of catalog.driverByName.get(member.driver)?.fixedBlades ?? []) {
+      if (member.blades.includes(name) || claimed.has(name))
+        continue
+      const empty = member.blades.findIndex(blade => !blade)
+      if (empty < 0)
+        continue
+      member.blades[empty] = name
+      claimed.add(name)
+    }
+  }
+  return next
 }
