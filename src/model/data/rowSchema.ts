@@ -14,6 +14,7 @@ export const BladeRowSchema = Schema.Struct({
   weapon_role: Schema.String,
   element1: Schema.String,
   element2: Schema.NullOr(Schema.String),
+  advanced_new_game: Schema.Boolean,
 })
 
 export const BindRowSchema = Schema.Struct({

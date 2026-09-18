@@ -76,6 +76,10 @@ export const allowName = (name: string | null): Criterion =>
 export const niaBladeOk = (niaDriverTaken: boolean): Criterion =>
   criterion(`niaBladeOk(${niaDriverTaken})`, ctx => !(niaDriverTaken && ctx.blade.name === "nia"))
 
+/** NG+ blades are hidden unless Advanced New Game is on. */
+export const advancedNewGameOk = (enabled: boolean): Criterion =>
+  criterion(`advancedNewGameOk(${enabled})`, ctx => !ctx.blade.advancedNewGame || enabled)
+
 /** Empty list = no restriction (SQL WHERE 1=1). */
 const restrict = (
   items: readonly string[],
