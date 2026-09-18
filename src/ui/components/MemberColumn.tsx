@@ -92,6 +92,7 @@ export default function MemberColumn(props: MemberColumnProps) {
   const setDriver = (driver: string) => {
     const info = catalog.driverByName.get(driver)
     const blades: [SlotName, SlotName, SlotName] = [null, null, null]
+    // Prefill unused fixed blades. Tora's Poppi stay locked; other drivers can replace them.
     info?.fixedBlades.forEach((name, i) => {
       if (i < 3 && !usedByOthers.has(name))
         blades[i] = name
@@ -158,7 +159,7 @@ export default function MemberColumn(props: MemberColumnProps) {
         />
       )}
 
-      {state.driver && (
+      {state.driver && !catalog.isBindsOnly(state.driver) && (
         <div className="flex flex-col gap-2">
           <FilterSelect
             id={`element-${props.index}`}
@@ -189,7 +190,10 @@ export default function MemberColumn(props: MemberColumnProps) {
 
       {[0, 1, 2].map(slot => {
         const selected = state.blades[slot]
-        const locked = !!state.driver && !!selected && catalog.isFixed(state.driver, selected)
+        const locked = !!state.driver
+          && catalog.isBindsOnly(state.driver)
+          && !!selected
+          && catalog.isFixed(state.driver, selected)
         return match({ driver: state.driver, locked })
           .with({ driver: P.nullish }, () => (
             <TextField
@@ -207,7 +211,6 @@ export default function MemberColumn(props: MemberColumnProps) {
               driver={driver}
               blade={selected!}
               slot={slot}
-              locked
             />
           ))
           .with({ driver: P.string }, ({ driver: driverName }) => {
@@ -375,7 +378,6 @@ function BladeSummary(props: {
   driver: string
   blade: string
   slot: number
-  locked: boolean
 }) {
   const { t } = useI18n()
   return (
