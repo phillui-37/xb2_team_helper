@@ -46,7 +46,14 @@
     "claws": "Knuckle Claws",
     "nia": "Catalyst Scimitar",
     "shulk": "Monado",
-    "elma": "Dual Swords"
+    "elma": "Dual Swords",
+    "calamity scythe": "Calamity Scythe",
+    "cobra bardiche": "Cobra Bardiche",
+    "infinity fans": "Infinity Fans",
+    "brilliant twinblades": "Brilliant Twinblades",
+    "decimation cannon": "Decimation Cannon",
+    "rockrending gauntlets": "Rockrending Gauntlets",
+    "sword tonfa": "Sword Tonfa"
   },
   "blade": {
     "seihai": "Aegis",
@@ -93,12 +100,21 @@
     "fiora": "Fiora",
     "shulk": "Shulk",
     "elma": "Elma",
-    "kamuya": "Corvin"
+    "kamuya": "Corvin",
+    "yoshitsune": "Akhos",
+    "benkei": "Patroka",
+    "satahiko": "Mikhail",
+    "kamui": "Obrona",
+    "ragou": "Perdido",
+    "ootsuchi": "Cressidus",
+    "zantetsu": "Sever"
   },
   "ui": {
     "title": "Xenoblade 2 Team Helper",
     "calculate": "Calculate",
     "redundancy": "2 blades per effect",
+    "advancedNewGame": "Advanced New Game",
+    "angTag": "NG+",
     "driver": "Driver",
     "blade": "Blade",
     "empty": "(empty)",

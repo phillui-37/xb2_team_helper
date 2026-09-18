@@ -46,7 +46,14 @@
     "claws": "拳爪",
     "nia": "彎刀",
     "shulk": "莫納多",
-    "elma": "雙劍"
+    "elma": "雙劍",
+    "calamity scythe": "大鐮",
+    "cobra bardiche": "薙刀",
+    "infinity fans": "扇",
+    "brilliant twinblades": "小太刀",
+    "decimation cannon": "大炮",
+    "rockrending gauntlets": "手甲",
+    "sword tonfa": "旋棍"
   },
   "blade": {
     "seihai": "天之聖杯",
@@ -93,12 +100,21 @@
     "fiora": "菲奧倫",
     "shulk": "修爾克",
     "elma": "艾爾瑪",
-    "kamuya": "神八"
+    "kamuya": "神八",
+    "yoshitsune": "義經",
+    "benkei": "弁慶",
+    "satahiko": "佐田彥",
+    "kamui": "神威",
+    "ragou": "羅候",
+    "ootsuchi": "大槌",
+    "zantetsu": "斬鐵"
   },
   "ui": {
     "title": "異度神劍2 隊伍計算",
     "calculate": "計算",
     "redundancy": "各效果2把",
+    "advancedNewGame": "進階新遊戲",
+    "angTag": "二周目",
     "driver": "劍主",
     "blade": "神劍",
     "empty": "（空）",

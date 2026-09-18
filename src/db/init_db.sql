@@ -32,6 +32,7 @@ CREATE TABLE blade (
     weapon_id INTEGER NOT NULL,
     element1_id INTEGER NOT NULL,
     element2_id INTEGER NULL,
+    advanced_new_game BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_blade_weapon
         FOREIGN KEY (weapon_id) REFERENCES weapon(id),
     CONSTRAINT fk_blade_element1
@@ -242,7 +243,14 @@ FROM (
     ('claws', 'Healer'),
     ('nia', 'Healer'),
     ('shulk', 'Attacker'),
-    ('elma', 'Attacker')
+    ('elma', 'Attacker'),
+    ('calamity scythe', 'Healer'),
+    ('cobra bardiche', 'Attacker'),
+    ('infinity fans', 'Tank'),
+    ('brilliant twinblades', 'Attacker'),
+    ('decimation cannon', 'Attacker'),
+    ('rockrending gauntlets', 'Tank'),
+    ('sword tonfa', 'Tank')
 ) AS w(name, role_name)
 JOIN role r on r.name = w.role_name;
 
@@ -301,6 +309,23 @@ FROM (
         ('shulk', 'shulk', 'light', NULL),
         ('elma', 'elma', 'dark', NULL),
         ('kamuya', 'uchigatana', 'light', NULL)
+) AS b(name, w_name, e1, e2)
+join weapon w on w.name = b.w_name
+join element e1 on e1.name = b.e1
+left join element e2 on e2.name = b.e2;
+
+-- Advanced New Game (New Game Plus) Torna blades.
+INSERT INTO blade (name, weapon_id, element1_id, element2_id, advanced_new_game)
+SELECT b.name, w.id, e1.id, e2.id, TRUE
+FROM (
+    VALUES
+        ('yoshitsune', 'calamity scythe', 'electricity', NULL),
+        ('benkei', 'cobra bardiche', 'earth', NULL),
+        ('satahiko', 'infinity fans', 'dark', NULL),
+        ('kamui', 'brilliant twinblades', 'electricity', NULL),
+        ('ragou', 'decimation cannon', 'fire', NULL),
+        ('ootsuchi', 'rockrending gauntlets', 'earth', NULL),
+        ('zantetsu', 'sword tonfa', 'wind', NULL)
 ) AS b(name, w_name, e1, e2)
 join weapon w on w.name = b.w_name
 join element e1 on e1.name = b.e1
@@ -401,6 +426,23 @@ from (
 join driver d on d.name = x.d_name
 join weapon w on w.name = x.w_name
 join effect e on e.name = x.e_name;
+
+-- NG+ unique weapons reuse Driver Combo arts of their animation type.
+INSERT INTO driver_weapon_effect (driver_id, weapon_id, effect_id)
+SELECT dwe.driver_id, dst.id, dwe.effect_id
+FROM (
+    VALUES
+        ('calamity scythe', 'axe'),
+        ('cobra bardiche', 'lance'),
+        ('infinity fans', 'twin rings'),
+        ('brilliant twinblades', 'twin rings'),
+        ('decimation cannon', 'cannon'),
+        ('rockrending gauntlets', 'claws'),
+        ('sword tonfa', 'claws')
+) AS map(dst_name, src_name)
+JOIN weapon src ON src.name = map.src_name
+JOIN weapon dst ON dst.name = map.dst_name
+JOIN driver_weapon_effect dwe ON dwe.weapon_id = src.id;
 
 insert into element_chain (element1_id, element2_id, element3_id)
 select e1.id, e2.id, e3.id

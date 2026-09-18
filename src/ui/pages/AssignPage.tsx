@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { Chip, FormControl, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material"
+import { Checkbox, Chip, FormControl, FormControlLabel, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material"
 import { match } from "ts-pattern"
 import type { BladeSource, Catalog } from "../../types/common"
 import { useI18n } from "../i18n/LanguageContext"
@@ -15,6 +15,8 @@ const sourceLabelKey = (source: BladeSource) =>
 export default function AssignPage(props: {
   catalog: Catalog
   owners: Map<string, string>
+  advancedNewGame: boolean
+  onAdvancedNewGameChange: (enabled: boolean) => void
   onChange: (owners: Map<string, string>) => void
 }) {
   const { t } = useI18n()
@@ -22,11 +24,14 @@ export default function AssignPage(props: {
   const [query, setQuery] = useState('')
 
   const blades = useMemo(() => {
-    const sorted = catalog.blades.slice().sort((a, b) =>
-      t(`blade.${a.name}`).localeCompare(t(`blade.${b.name}`), undefined, { sensitivity: 'base' }),
-    )
+    const sorted = catalog.blades
+      .filter(blade => !blade.advancedNewGame || props.advancedNewGame)
+      .slice()
+      .sort((a, b) =>
+        t(`blade.${a.name}`).localeCompare(t(`blade.${b.name}`), undefined, { sensitivity: 'base' }),
+      )
     return fuzzyFilterOptions(sorted, query, blade => [`blade.${blade.name}`])
-  }, [catalog, query, t])
+  }, [catalog, query, props.advancedNewGame, t])
 
   const setOwner = (blade: string, driver: string) => {
     const next = new Map(props.owners)
@@ -39,6 +44,15 @@ export default function AssignPage(props: {
 
   return (
     <div className="flex flex-col gap-4">
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={props.advancedNewGame}
+            onChange={event => props.onAdvancedNewGameChange(event.target.checked)}
+          />
+        }
+        label={t('ui.advancedNewGame')}
+      />
       <Typography variant="body2" color="text.secondary">{t('ui.assignHint')}</Typography>
       <TextField
         size="small"
@@ -57,6 +71,7 @@ export default function AssignPage(props: {
                 <div className="flex flex-wrap items-center gap-2">
                   <Typography variant="subtitle2">{t(`blade.${blade.name}`)}</Typography>
                   <Chip size="small" label={t(sourceLabelKey(source))} />
+                  {blade.advancedNewGame && <Chip size="small" variant="outlined" label={t('ui.angTag')} />}
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1">
                   <Chip size="small" variant="outlined" color="secondary" label={t(`weapon.${blade.weaponName}`)} />

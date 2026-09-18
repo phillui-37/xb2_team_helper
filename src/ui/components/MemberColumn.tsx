@@ -6,6 +6,7 @@ import type { BladeInfo, BladeOwners, Catalog, MemberState, SlotName } from "../
 import { holderOf } from "../../model/availability"
 import { NIA } from "../../model/solver"
 import {
+  advancedNewGameOk,
   allowName,
   and,
   availableFromState,
@@ -34,6 +35,7 @@ export type MemberColumnProps = {
   takenDrivers: Set<string>
   niaBladeTaken: boolean
   niaDriverTaken: boolean
+  advancedNewGame: boolean
   onChange: (state: MemberState) => void
 }
 
@@ -62,6 +64,8 @@ export default function MemberColumn(props: MemberColumnProps) {
     const driver = catalog.driverByName.get(state.driver)
     const seen = new Map<string, boolean>()
     for (const blade of catalog.manualCandidatesFor(state.driver, owners)) {
+      if (blade.advancedNewGame && !props.advancedNewGame)
+        continue
       if (!seen.has(blade.weaponName))
         seen.set(blade.weaponName, !!driver && driver.role === blade.weaponRole)
     }
@@ -72,7 +76,7 @@ export default function MemberColumn(props: MemberColumnProps) {
           return a.onRole ? -1 : 1
         return t(`weapon.${a.name}`).localeCompare(t(`weapon.${b.name}`), undefined, { sensitivity: 'base' })
       })
-  }, [catalog, state.driver, owners, t])
+  }, [catalog, state.driver, owners, props.advancedNewGame, t])
 
   const canBorrow = !!state.driver && !!catalog.driverByName.get(state.driver)?.canUseForeign
 
@@ -235,6 +239,7 @@ export default function MemberColumn(props: MemberColumnProps) {
                   eligible,
                   availableFromState(props.members, state.blades),
                   niaBladeOk(props.niaDriverTaken),
+                  advancedNewGameOk(props.advancedNewGame),
                   uiFilters(filter),
                 ),
               ),
@@ -343,6 +348,8 @@ function bladeSelectDetails(
     parts.push(t('ui.reclaim'))
   if (offRole)
     parts.push(t('ui.offRole'))
+  if (blade.advancedNewGame)
+    parts.push(t('ui.angTag'))
   return parts.join(' · ')
 }
 
@@ -416,6 +423,7 @@ function BladeChips(props: { catalog: Catalog; driver: string; blade: string }) 
     <div className="flex flex-wrap gap-1">
       {borrowed && <Chip size="small" color="info" label={t('ui.borrowed')} />}
       {offRole && <Chip size="small" color="warning" label={t('ui.offRole')} />}
+      {info?.advancedNewGame && <Chip size="small" variant="outlined" label={t('ui.angTag')} />}
       {info && (
         <Chip size="small" color="secondary" variant="outlined" label={t(`weapon.${info.weaponName}`)} />
       )}

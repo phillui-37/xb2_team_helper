@@ -4,7 +4,8 @@ SELECT
   w.name AS weapon,
   wr.name AS weapon_role,
   e1.name AS element1,
-  e2.name AS element2
+  e2.name AS element2,
+  b.advanced_new_game
 FROM blade b
 JOIN weapon w ON w.id = b.weapon_id
 JOIN role wr ON wr.id = w.role_id

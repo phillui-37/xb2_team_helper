@@ -7,6 +7,7 @@ export type BladeRow = {
   weapon_role: string
   element1: string
   element2: string | null
+  advanced_new_game: boolean
 }
 
 export type BindRow = { blade: string; driver: string; is_fixed: boolean }

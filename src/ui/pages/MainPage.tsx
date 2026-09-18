@@ -13,6 +13,8 @@ import WikiPage from "./wiki/WikiPage"
 
 type MainTab = 0 | 1 | 2
 
+const ANG_STORAGE_KEY = 'xb2-advanced-new-game'
+
 const emptyMember = (): MemberState => ({
   driver: null,
   blades: [null, null, null],
@@ -20,6 +22,22 @@ const emptyMember = (): MemberState => ({
   borrowBound: true,
   uniqueWeapon: true,
 })
+
+const readAdvancedNewGame = (): boolean => {
+  try {
+    return localStorage.getItem(ANG_STORAGE_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+const storeAdvancedNewGame = (value: boolean): void => {
+  try {
+    localStorage.setItem(ANG_STORAGE_KEY, value ? '1' : '0')
+  } catch {
+    // ignore quota / private mode
+  }
+}
 
 export default function MainPage() {
   const [catalog, setCatalog] = useState<Catalog | undefined>(undefined)
@@ -50,6 +68,7 @@ function AppShell(props: { catalog: Catalog }) {
   const [owners, setOwners] = useState<Map<string, string>>(() => readOwners(catalog))
   const [members, setMembers] = useState<MemberState[]>([emptyMember(), emptyMember(), emptyMember()])
   const [redundancy, setRedundancy] = useState(false)
+  const [advancedNewGame, setAdvancedNewGame] = useState(readAdvancedNewGame)
   const [results, setResults] = useState<TeamResult[] | undefined>(undefined)
   const [calculating, setCalculating] = useState(false)
 
@@ -78,13 +97,33 @@ function AppShell(props: { catalog: Catalog }) {
     setResults(undefined)
   }
 
+  const updateAdvancedNewGame = (enabled: boolean) => {
+    storeAdvancedNewGame(enabled)
+    setAdvancedNewGame(enabled)
+    if (!enabled) {
+      setMembers(ori => reconcileMembers(
+        catalog,
+        ori.map(member => ({
+          ...member,
+          blades: member.blades.map(blade => {
+            if (!blade)
+              return blade
+            return catalog.bladeByName.get(blade)?.advancedNewGame ? null : blade
+          }) as MemberState['blades'],
+        })),
+        owners,
+      ))
+    }
+    setResults(undefined)
+  }
+
   const runCalculate = () => {
     if (!canCalculate)
       return
     setCalculating(true)
     setResults(undefined)
     window.setTimeout(() => {
-      const found = solve(catalog, members, redundancy, owners)
+      const found = solve(catalog, members, redundancy, owners, advancedNewGame)
       setResults(found)
       setCalculating(false)
     }, 0)
@@ -125,6 +164,15 @@ function AppShell(props: { catalog: Catalog }) {
               <FormControlLabel
                 control={
                   <Checkbox
+                    checked={advancedNewGame}
+                    onChange={event => updateAdvancedNewGame(event.target.checked)}
+                  />
+                }
+                label={t('ui.advancedNewGame')}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
                     checked={redundancy}
                     onChange={event => {
                       setRedundancy(event.target.checked)
@@ -159,6 +207,7 @@ function AppShell(props: { catalog: Catalog }) {
                   takenDrivers={takenDrivers}
                   niaBladeTaken={niaBladeTaken}
                   niaDriverTaken={niaDriverTaken}
+                  advancedNewGame={advancedNewGame}
                   onChange={next => updateMember(index, next)}
                 />
               ))}
@@ -172,7 +221,13 @@ function AppShell(props: { catalog: Catalog }) {
           </>
         ))
         .with(1, () => (
-          <AssignPage catalog={catalog} owners={owners} onChange={updateOwners} />
+          <AssignPage
+            catalog={catalog}
+            owners={owners}
+            advancedNewGame={advancedNewGame}
+            onAdvancedNewGameChange={updateAdvancedNewGame}
+            onChange={updateOwners}
+          />
         ))
         .with(2, () => (
           <WikiPage catalog={catalog} />
