@@ -41,7 +41,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
-      includeAssets: ['favicon.ico', 'favicon.svg', 'apple-touch-icon.png'],
+      includeManifestIcons: false,
       manifest: {
         id: BASE_PATH,
         name: 'Xenoblade 2 Team Helper',
@@ -75,7 +75,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,html,ico,png,svg,webmanifest,wasm,data}'],
+        globPatterns: ['**/*.{js,html,ico,png,svg,wasm,data}'],
         maximumFileSizeToCacheInBytes: 15 * 1024 * 1024,
         navigateFallback: 'index.html',
       },
