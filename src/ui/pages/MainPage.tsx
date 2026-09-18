@@ -51,13 +51,13 @@ export default function MainPage() {
 
   return match({ error, catalog })
     .with({ error: P.string }, ({ error }) => (
-      <div className="p-6 text-red-700">{error}</div>
+      <div className="p-app text-red-700">{error}</div>
     ))
     .with({ catalog: P.nonNullable }, ({ catalog }) => (
       <AppShell catalog={catalog} />
     ))
     .otherwise(() => (
-      <div className="flex min-h-screen items-center justify-center"><CircularProgress /></div>
+      <div className="flex min-h-dvh items-center justify-center p-app"><CircularProgress /></div>
     ))
 }
 
@@ -130,7 +130,7 @@ function AppShell(props: { catalog: Catalog }) {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 p-4">
+    <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-6 p-app">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <Typography variant="h5">{t('ui.title')}</Typography>
         <ToggleButtonGroup

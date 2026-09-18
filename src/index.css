@@ -1,1 +1,37 @@
 @import "tailwindcss";
+
+:root {
+  --app-chrome: #123462;
+}
+
+html {
+  background-color: var(--app-chrome);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100svh;
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  background-color: #fff;
+  background-clip: content-box;
+}
+
+#root {
+  min-height: 100%;
+  background-color: #fff;
+}
+
+@utility p-app {
+  padding: 1rem;
+
+  @media (max-width: 767px) {
+    padding-top: 2rem;
+    padding-right: 1rem;
+    padding-bottom: 3rem;
+    padding-left: 1rem;
+  }
+}
