@@ -33,6 +33,7 @@ export type BladeInfo = {
   elementMask: number
   index: number
   advancedNewGame: boolean
+  auxCoreSlots: number
   canChangeElement: boolean
 }
 
@@ -55,6 +56,7 @@ export type TeamResult = {
   members: TeamMember[]
   elementMask: number
   effectCounts: [number, number, number, number]
+  auxCoreSlots: number
 }
 
 export type WeaponInfo = {

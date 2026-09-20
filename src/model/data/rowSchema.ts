@@ -15,6 +15,7 @@ export const BladeRowSchema = Schema.Struct({
   element1: Schema.String,
   element2: Schema.NullOr(Schema.String),
   advanced_new_game: Schema.Boolean,
+  aux_core_slots: Schema.Number,
   can_change_element: Schema.Boolean,
 })
 

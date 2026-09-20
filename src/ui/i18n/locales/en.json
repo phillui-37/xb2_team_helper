@@ -139,6 +139,7 @@
     "borrowed": "Borrowed",
     "reclaim": "Return",
     "resultCount": "{{n}} teams (max 100)",
+    "auxCores": "Aux Cores",
     "pickDriver": "Select",
     "weapon": "Weapon",
     "all": "All",

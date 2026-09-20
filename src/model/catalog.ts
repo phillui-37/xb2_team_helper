@@ -83,6 +83,7 @@ export function buildCatalog(raw: {
       elementMask,
       index,
       advancedNewGame: b.advanced_new_game,
+      auxCoreSlots: b.aux_core_slots,
       canChangeElement: b.can_change_element,
     }
   })

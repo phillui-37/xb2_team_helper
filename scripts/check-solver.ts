@@ -8,6 +8,7 @@ function blade(
   elementMask = 1,
   weaponName = "w",
   advancedNewGame = false,
+  auxCoreSlots = 1,
   canChangeElement = false,
 ): BladeInfo {
   return {
@@ -19,6 +20,7 @@ function blade(
     elementMask,
     index,
     advancedNewGame,
+    auxCoreSlots,
     canChangeElement,
   }
 }
@@ -212,6 +214,7 @@ const poppi = (name: string, index: number, defaultBit: number, defaultName: str
   elementMask: defaultBit,
   index,
   advancedNewGame: false,
+  auxCoreSlots: 0,
   canChangeElement: true,
 })
 
@@ -294,6 +297,24 @@ const poppiCustomOff = solve(
 )
 assert(poppiCustomOff.length === 0, "custom elements must be ignored when allowElementChange is off")
 
+const lowFill = blade("fill-low", 13, 1, "w", false, 1)
+const highFill = blade("fill-high", 14, 1, "w", false, 3)
+const sortCatalog = mockCatalog({
+  blades: [...locked, lowFill, highFill],
+  drivers,
+  effectsOf,
+  candidates: [lowFill, highFill],
+})
+const sorted = solve(sortCatalog, members, true, new Map())
+assert(sorted.length === 2, `aux-core sort: expected 2 teams, got ${sorted.length}`)
+assert(sorted[0]?.members[2]?.blades[2] === "fill-high", "higher aux-core team should sort first")
+assert(sorted[1]?.members[2]?.blades[2] === "fill-low", "lower aux-core team should sort second")
+assert(sorted[0]!.auxCoreSlots > sorted[1]!.auxCoreSlots, "auxCoreSlots should decrease")
+assert(
+  sorted.every((team, i) => i === 0 || sorted[i - 1]!.auxCoreSlots >= team.auxCoreSlots),
+  "results must be sorted by aux core slot count descending",
+)
+
 console.log("solver duplicate checks passed", {
   screenshotLike: oneFill.length,
   threeCandidates: threeFill.length,
@@ -306,4 +327,5 @@ console.log("solver duplicate checks passed", {
   poppiAny: poppiAny.length,
   poppiCustom: poppiCustom.length,
   poppiCustomOff: poppiCustomOff.length,
+  auxCoreSort: sorted.map(team => team.auxCoreSlots),
 })

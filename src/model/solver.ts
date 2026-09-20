@@ -143,6 +143,16 @@ function popcount(mask: number): number {
   return c
 }
 
+export function teamAuxCoreSlots(catalog: Catalog, members: TeamMember[]): number {
+  let total = 0
+  for (const member of members) {
+    for (const name of member.blades) {
+      total += catalog.bladeByName.get(name)?.auxCoreSlots ?? 0
+    }
+  }
+  return total
+}
+
 /** Driver + slot identity for a completed team. */
 export function teamMemoKey(members: TeamMember[]): string {
   return members.map(m => `${m.driver}:${m.blades.join(",")}`).join("|")
@@ -369,6 +379,7 @@ export function solve(
             members: resolved.members,
             elementMask: resolved.elementMask,
             effectCounts: [...effectCounts],
+            auxCoreSlots: teamAuxCoreSlots(catalog, resolved.members),
           })
         }
         return
@@ -488,5 +499,6 @@ export function solve(
         take(team)
     }
   }
+  results.sort((a, b) => b.auxCoreSlots - a.auxCoreSlots)
   return results
 }

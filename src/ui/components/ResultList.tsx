@@ -32,10 +32,15 @@ export default function ResultList(props: {
                       : override === ANY_ELEMENT
                         ? t('ui.anyElement')
                         : t(`element.${override}`)
+                    const slots = props.catalog.bladeByName.get(blade)?.auxCoreSlots
+                    const details = [
+                      elementLabel,
+                      slots !== undefined ? `${t('ui.auxCores')} ×${slots}` : null,
+                    ].filter((part): part is string => !!part)
                     return (
                       <Typography key={`${blade}-${slot}`} variant="body2">
                         {t(`blade.${blade}`)}
-                        {elementLabel ? ` · ${elementLabel}` : ''}
+                        {details.length > 0 ? ` · ${details.join(' · ')}` : ''}
                       </Typography>
                     )
                   })}
@@ -43,6 +48,12 @@ export default function ResultList(props: {
               ))}
             </div>
             <div className="flex flex-wrap gap-1">
+              <Chip
+                size="small"
+                color="success"
+                variant="outlined"
+                label={`${t('ui.auxCores')} ×${team.auxCoreSlots}`}
+              />
               {props.catalog.elements.map((el, idx) => (
                 (team.elementMask & (1 << idx)) !== 0
                   ? <Chip key={el} size="small" variant="outlined" label={t(`element.${el}`)} />

@@ -88,6 +88,7 @@ export default function AssignPage(props: {
                   {blade.canChangeElement && (
                     <Chip size="small" variant="outlined" label={t('ui.elementChangeable')} />
                   )}
+                  <Chip size="small" variant="outlined" label={`${t('ui.auxCores')} ×${blade.auxCoreSlots}`} />
                 </div>
               </div>
               {locked ? (
