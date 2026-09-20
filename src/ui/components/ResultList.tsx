@@ -24,15 +24,25 @@ export default function ResultList(props: {
                   <Typography variant="subtitle2">
                     {t(`driver.${member.driver}`)}
                   </Typography>
-                  {member.blades.map(blade => (
-                    <Typography key={blade} variant="body2">
-                      {t(`blade.${blade}`)}
-                    </Typography>
-                  ))}
+                  {member.blades.map(blade => {
+                    const slots = props.catalog.bladeByName.get(blade)?.auxCoreSlots
+                    return (
+                      <Typography key={blade} variant="body2">
+                        {t(`blade.${blade}`)}
+                        {slots !== undefined ? ` · ${t('ui.auxCores')} ×${slots}` : ''}
+                      </Typography>
+                    )
+                  })}
                 </div>
               ))}
             </div>
             <div className="flex flex-wrap gap-1">
+              <Chip
+                size="small"
+                color="success"
+                variant="outlined"
+                label={`${t('ui.auxCores')} ×${team.auxCoreSlots}`}
+              />
               {props.catalog.elements.map((el, idx) => (
                 (team.elementMask & (1 << idx)) !== 0
                   ? <Chip key={el} size="small" variant="outlined" label={t(`element.${el}`)} />

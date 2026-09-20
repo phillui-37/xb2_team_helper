@@ -78,6 +78,7 @@ export default function AssignPage(props: {
                   {blade.elements.map(el => (
                     <Chip key={el} size="small" variant="outlined" label={t(`element.${el}`)} />
                   ))}
+                  <Chip size="small" variant="outlined" label={`${t('ui.auxCores')} ×${blade.auxCoreSlots}`} />
                 </div>
               </div>
               {locked ? (

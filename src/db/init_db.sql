@@ -33,6 +33,7 @@ CREATE TABLE blade (
     element1_id INTEGER NOT NULL,
     element2_id INTEGER NULL,
     advanced_new_game BOOLEAN NOT NULL DEFAULT FALSE,
+    aux_core_slots INTEGER NOT NULL DEFAULT 0,
     CONSTRAINT fk_blade_weapon
         FOREIGN KEY (weapon_id) REFERENCES weapon(id),
     CONSTRAINT fk_blade_element1
@@ -43,7 +44,9 @@ CREATE TABLE blade (
         CHECK (
             element2_id IS NULL
             OR element2_id <> element1_id
-        )
+        ),
+    CONSTRAINT ck_blade_aux_core_slots
+        CHECK (aux_core_slots BETWEEN 0 AND 3)
 );
 
 CREATE TABLE driver (
@@ -260,73 +263,74 @@ VALUES ('fire'), ('water'), ('wind'), ('ice'), ('electricity'), ('earth'), ('dar
 INSERT INTO effect (name)
 VALUES ('break'), ('topple'), ('launch'), ('smash');
 
-INSERT INTO blade (name, weapon_id, element1_id, element2_id)
-SELECT b.name, w.id, e1.id, e2.id
+-- Aux core slot counts from in-game rare/legendary blade data (max 3; Poppi uses Skill RAM).
+INSERT INTO blade (name, weapon_id, element1_id, element2_id, aux_core_slots)
+SELECT b.name, w.id, e1.id, e2.id, b.aux_core_slots
 FROM (
     VALUES
-        ('seihai', 'seihai', 'fire', 'light'),
-        ('suzaku', 'suzaku', 'wind', NULL),
-        ('pyauko', 'twin rings', 'water', NULL),
-        ('hana jd', 'hana saber', 'ice', NULL),
-        ('hana jk', 'hana arms', 'fire', NULL),
-        ('hana js', 'hana shield', 'earth', NULL),
-        ('saika', 'saika', 'electricity', NULL),
-        ('kaguduchi', 'whip', 'fire', NULL),
-        ('wadatumi', 'katana', 'water', NULL),
-        ('nia', 'nia', 'water', NULL),
-        ('boreas', 'ball', 'wind', NULL),
-        ('crossette', 'ball', 'fire', NULL),
-        ('dahlla', 'ball', 'ice', NULL),
-        ('floren', 'ball', 'earth', NULL),
-        ('vess', 'ball', 'electricity', NULL),
-        ('azami', 'cannon', 'dark', NULL),
-        ('herald', 'cannon', 'electricity', NULL),
-        ('kosmos', 'cannon', 'light', NULL),
-        ('sheba', 'cannon', 'water', NULL),
-        ('agate', 'axe', 'earth', NULL),
-        ('dagas', 'axe', 'fire', NULL),
-        ('gorg', 'axe', 'water', NULL),
-        ('telos', 'axe', 'dark', NULL),
-        ('zanobia', 'axe', 'wind', NULL),
-        ('adenine', 'claws', 'wind', NULL),
-        ('kora', 'claws', 'electricity', NULL),
-        ('nim', 'claws', 'earth', NULL),
-        ('ursula', 'claws', 'ice', NULL),
-        ('perun', 'lance', 'ice', NULL),
-        ('praxis', 'lance', 'water', NULL),
-        ('vale', 'lance', 'dark', NULL),
-        ('wulfric', 'lance', 'earth', NULL),
-        ('electra', 'hammer', 'electricity', NULL),
-        ('finch', 'hammer', 'wind', NULL),
-        ('godfrey', 'hammer', 'ice', NULL),
-        ('kasandra', 'hammer', 'dark', NULL),
-        ('poppibuster', 'hammer', 'light', NULL),
-        ('newt', 'katana', 'fire', NULL),
-        ('perceval', 'katana', 'dark', NULL),
-        ('theory', 'katana', 'ice', NULL),
-        ('momo', 'ball', 'light', 'dark'),
-        ('fiora', 'twin rings', 'wind', NULL),
-        ('shulk', 'shulk', 'light', NULL),
-        ('elma', 'elma', 'dark', NULL),
-        ('kamuya', 'uchigatana', 'light', NULL)
-) AS b(name, w_name, e1, e2)
+        ('seihai', 'seihai', 'fire', 'light', 2),
+        ('suzaku', 'suzaku', 'wind', NULL, 2),
+        ('pyauko', 'twin rings', 'water', NULL, 2),
+        ('hana jd', 'hana saber', 'ice', NULL, 0),
+        ('hana jk', 'hana arms', 'fire', NULL, 0),
+        ('hana js', 'hana shield', 'earth', NULL, 0),
+        ('saika', 'saika', 'electricity', NULL, 3),
+        ('kaguduchi', 'whip', 'fire', NULL, 2),
+        ('wadatumi', 'katana', 'water', NULL, 2),
+        ('nia', 'nia', 'water', NULL, 3),
+        ('boreas', 'ball', 'wind', NULL, 1),
+        ('crossette', 'ball', 'fire', NULL, 3),
+        ('dahlla', 'ball', 'ice', NULL, 2),
+        ('floren', 'ball', 'earth', NULL, 2),
+        ('vess', 'ball', 'electricity', NULL, 2),
+        ('azami', 'cannon', 'dark', NULL, 2),
+        ('herald', 'cannon', 'electricity', NULL, 3),
+        ('kosmos', 'cannon', 'light', NULL, 3),
+        ('sheba', 'cannon', 'water', NULL, 3),
+        ('agate', 'axe', 'earth', NULL, 2),
+        ('dagas', 'axe', 'fire', NULL, 1),
+        ('gorg', 'axe', 'water', NULL, 2),
+        ('telos', 'axe', 'dark', NULL, 3),
+        ('zanobia', 'axe', 'wind', NULL, 3),
+        ('adenine', 'claws', 'wind', NULL, 2),
+        ('kora', 'claws', 'electricity', NULL, 2),
+        ('nim', 'claws', 'earth', NULL, 2),
+        ('ursula', 'claws', 'ice', NULL, 1),
+        ('perun', 'lance', 'ice', NULL, 1),
+        ('praxis', 'lance', 'water', NULL, 1),
+        ('vale', 'lance', 'dark', NULL, 3),
+        ('wulfric', 'lance', 'earth', NULL, 2),
+        ('electra', 'hammer', 'electricity', NULL, 1),
+        ('finch', 'hammer', 'wind', NULL, 1),
+        ('godfrey', 'hammer', 'ice', NULL, 2),
+        ('kasandra', 'hammer', 'dark', NULL, 2),
+        ('poppibuster', 'hammer', 'light', NULL, 3),
+        ('newt', 'katana', 'fire', NULL, 2),
+        ('perceval', 'katana', 'dark', NULL, 1),
+        ('theory', 'katana', 'ice', NULL, 2),
+        ('momo', 'ball', 'light', 'dark', 3),
+        ('fiora', 'twin rings', 'wind', NULL, 3),
+        ('shulk', 'shulk', 'light', NULL, 3),
+        ('elma', 'elma', 'dark', NULL, 3),
+        ('kamuya', 'uchigatana', 'light', NULL, 3)
+) AS b(name, w_name, e1, e2, aux_core_slots)
 join weapon w on w.name = b.w_name
 join element e1 on e1.name = b.e1
 left join element e2 on e2.name = b.e2;
 
 -- Advanced New Game (New Game Plus) Torna blades.
-INSERT INTO blade (name, weapon_id, element1_id, element2_id, advanced_new_game)
-SELECT b.name, w.id, e1.id, e2.id, TRUE
+INSERT INTO blade (name, weapon_id, element1_id, element2_id, advanced_new_game, aux_core_slots)
+SELECT b.name, w.id, e1.id, e2.id, TRUE, b.aux_core_slots
 FROM (
     VALUES
-        ('yoshitsune', 'calamity scythe', 'electricity', NULL),
-        ('benkei', 'cobra bardiche', 'earth', NULL),
-        ('satahiko', 'infinity fans', 'dark', NULL),
-        ('kamui', 'brilliant twinblades', 'electricity', NULL),
-        ('ragou', 'decimation cannon', 'fire', NULL),
-        ('ootsuchi', 'rockrending gauntlets', 'earth', NULL),
-        ('zantetsu', 'sword tonfa', 'wind', NULL)
-) AS b(name, w_name, e1, e2)
+        ('yoshitsune', 'calamity scythe', 'electricity', NULL, 3),
+        ('benkei', 'cobra bardiche', 'earth', NULL, 3),
+        ('satahiko', 'infinity fans', 'dark', NULL, 3),
+        ('kamui', 'brilliant twinblades', 'electricity', NULL, 2),
+        ('ragou', 'decimation cannon', 'fire', NULL, 2),
+        ('ootsuchi', 'rockrending gauntlets', 'earth', NULL, 2),
+        ('zantetsu', 'sword tonfa', 'wind', NULL, 2)
+) AS b(name, w_name, e1, e2, aux_core_slots)
 join weapon w on w.name = b.w_name
 join element e1 on e1.name = b.e1
 left join element e2 on e2.name = b.e2;

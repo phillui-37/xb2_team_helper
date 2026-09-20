@@ -8,6 +8,7 @@ export type BladeRow = {
   element1: string
   element2: string | null
   advanced_new_game: boolean
+  aux_core_slots: number
 }
 
 export type BindRow = { blade: string; driver: string; is_fixed: boolean }

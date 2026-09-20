@@ -7,6 +7,7 @@ function blade(
   elementMask = 1,
   weaponName = "w",
   advancedNewGame = false,
+  auxCoreSlots = 1,
 ): BladeInfo {
   return {
     id: index,
@@ -17,6 +18,7 @@ function blade(
     elementMask,
     index,
     advancedNewGame,
+    auxCoreSlots,
   }
 }
 
@@ -194,6 +196,24 @@ assert(
   "ANG blade should fill a slot when the option is on",
 )
 
+const lowFill = blade("fill-low", 13, 1, "w", false, 1)
+const highFill = blade("fill-high", 14, 1, "w", false, 3)
+const sortCatalog = mockCatalog({
+  blades: [...locked, lowFill, highFill],
+  drivers,
+  effectsOf,
+  candidates: [lowFill, highFill],
+})
+const sorted = solve(sortCatalog, members, true, new Map())
+assert(sorted.length === 2, `aux-core sort: expected 2 teams, got ${sorted.length}`)
+assert(sorted[0]?.members[2]?.blades[2] === "fill-high", "higher aux-core team should sort first")
+assert(sorted[1]?.members[2]?.blades[2] === "fill-low", "lower aux-core team should sort second")
+assert(sorted[0]!.auxCoreSlots > sorted[1]!.auxCoreSlots, "auxCoreSlots should decrease")
+assert(
+  sorted.every((team, i) => i === 0 || sorted[i - 1]!.auxCoreSlots >= team.auxCoreSlots),
+  "results must be sorted by aux core slot count descending",
+)
+
 console.log("solver duplicate checks passed", {
   screenshotLike: oneFill.length,
   threeCandidates: threeFill.length,
@@ -202,4 +222,5 @@ console.log("solver duplicate checks passed", {
   uniqueWeaponCombo: comboFill.length,
   angOff: angOff.length,
   angOn: angOn.length,
+  auxCoreSort: sorted.map(team => team.auxCoreSlots),
 })
