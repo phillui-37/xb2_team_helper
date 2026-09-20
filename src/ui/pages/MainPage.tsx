@@ -5,6 +5,7 @@ import DB from "../../model/db"
 import { hasNiaBlade, hasNiaDriver, solve } from "../../model/solver"
 import { readOwners, reconcileMembers, storeOwners } from "../../model/owners"
 import type { Catalog, Language, MemberState, TeamResult } from "../../types/common"
+import { emptyBladeElements } from "../../types/common"
 import { LANGUAGES, useI18n } from "../i18n/LanguageContext"
 import MemberColumn from "../components/MemberColumn"
 import ResultList from "../components/ResultList"
@@ -21,6 +22,8 @@ const emptyMember = (): MemberState => ({
   matchRole: true,
   borrowBound: true,
   uniqueWeapon: true,
+  allowElementChange: false,
+  bladeElements: emptyBladeElements(),
 })
 
 const readAdvancedNewGame = (): boolean => {

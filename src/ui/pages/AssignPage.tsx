@@ -76,8 +76,18 @@ export default function AssignPage(props: {
                 <div className="mt-1 flex flex-wrap gap-1">
                   <Chip size="small" variant="outlined" color="secondary" label={t(`weapon.${blade.weaponName}`)} />
                   {blade.elements.map(el => (
-                    <Chip key={el} size="small" variant="outlined" label={t(`element.${el}`)} />
+                    <Chip
+                      key={el}
+                      size="small"
+                      variant="outlined"
+                      label={blade.canChangeElement
+                        ? `${t(`element.${el}`)} (${t('ui.defaultElement')})`
+                        : t(`element.${el}`)}
+                    />
                   ))}
+                  {blade.canChangeElement && (
+                    <Chip size="small" variant="outlined" label={t('ui.elementChangeable')} />
+                  )}
                   <Chip size="small" variant="outlined" label={`${t('ui.auxCores')} ×${blade.auxCoreSlots}`} />
                 </div>
               </div>

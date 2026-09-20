@@ -5,6 +5,13 @@ export type BladeOwners = ReadonlyMap<string, string>
 
 export const DRIVER_NIA = 'nia'
 export const DRIVER_TORA = 'tora'
+/** Wildcard element for Poppiswap blades: solver may use any element. */
+export const ANY_ELEMENT = '-'
+
+export type ElementChoice = string | null
+
+export const emptyBladeElements = (): [ElementChoice, ElementChoice, ElementChoice] =>
+  [null, null, null]
 
 export type MemberState = {
   driver: string | null
@@ -12,6 +19,8 @@ export type MemberState = {
   matchRole: boolean
   borrowBound: boolean
   uniqueWeapon: boolean
+  allowElementChange: boolean
+  bladeElements: [ElementChoice, ElementChoice, ElementChoice]
 }
 
 export type BladeInfo = {
@@ -19,11 +28,13 @@ export type BladeInfo = {
   name: string
   weaponName: string
   weaponRole: string
+  /** Default element(s) from the database. */
   elements: string[]
   elementMask: number
   index: number
   advancedNewGame: boolean
   auxCoreSlots: number
+  canChangeElement: boolean
 }
 
 export type DriverInfo = {
@@ -37,6 +48,8 @@ export type DriverInfo = {
 export type TeamMember = {
   driver: string
   blades: [string, string, string]
+  /** Resolved element per slot; null means the blade's default. */
+  bladeElements: [ElementChoice, ElementChoice, ElementChoice]
 }
 
 export type TeamResult = {
