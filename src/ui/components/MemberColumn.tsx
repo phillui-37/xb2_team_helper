@@ -488,6 +488,13 @@ function BladeChips(props: {
             value={selectedElement}
             displayEmpty
             notched
+            renderValue={value => {
+              if (!value || value === ANY_ELEMENT)
+                return t('ui.anyElement')
+              if (value === defaultElement)
+                return `${t(`element.${value}`)} (${t('ui.defaultElement')})`
+              return t(`element.${value}`)
+            }}
             onChange={event => {
               const value = event.target.value
               props.onElementChange?.(value === defaultElement ? null : value)
