@@ -1,5 +1,6 @@
 import { solve, teamMemoKey } from "../src/model/solver.ts"
 import type { BladeInfo, Catalog, DriverInfo, MemberState, TeamMember } from "../src/types/common.ts"
+import { ANY_ELEMENT, emptyBladeElements } from "../src/types/common.ts"
 
 function blade(
   name: string,
@@ -7,6 +8,7 @@ function blade(
   elementMask = 1,
   weaponName = "w",
   advancedNewGame = false,
+  canChangeElement = false,
 ): BladeInfo {
   return {
     id: index,
@@ -17,6 +19,7 @@ function blade(
     elementMask,
     index,
     advancedNewGame,
+    canChangeElement,
   }
 }
 
@@ -29,15 +32,19 @@ function mockCatalog(opts: {
   drivers: DriverInfo[]
   effectsOf: (driver: string, blade: string) => string[]
   candidates: BladeInfo[]
+  allElementsMask?: number
 }): Catalog {
   const bladeByName = new Map(opts.blades.map(b => [b.name, b]))
   const driverByName = new Map(opts.drivers.map(d => [d.name, d]))
   const effectIndex = new Map([["break", 0], ["topple", 1], ["launch", 2], ["smash", 3]])
+  const elements = ["fire", "water", "wind", "ice", "electricity", "earth", "dark", "light"]
   return {
     bladeByName,
     driverByName,
     effectIndex,
-    allElementsMask: 1,
+    elements,
+    elementIndex: new Map(elements.map((name, i) => [name, i])),
+    allElementsMask: opts.allElementsMask ?? 1,
     effectsOf: opts.effectsOf,
     solverCandidatesFor: () => opts.candidates,
     isForeignBound: () => false,
@@ -73,13 +80,15 @@ const effectsOf = (d: string, b: string): string[] => {
 const member = (
   driver: string,
   blades: MemberState["blades"],
-  opts: Partial<Pick<MemberState, "matchRole" | "borrowBound" | "uniqueWeapon">> = {},
+  opts: Partial<Pick<MemberState, "matchRole" | "borrowBound" | "uniqueWeapon" | "allowElementChange" | "bladeElements">> = {},
 ): MemberState => ({
   driver,
   blades,
   matchRole: opts.matchRole ?? true,
   borrowBound: opts.borrowBound ?? false,
   uniqueWeapon: opts.uniqueWeapon ?? false,
+  allowElementChange: opts.allowElementChange ?? false,
+  bladeElements: opts.bladeElements ?? emptyBladeElements(),
 })
 
 const members: MemberState[] = [
@@ -194,6 +203,97 @@ assert(
   "ANG blade should fill a slot when the option is on",
 )
 
+const poppi = (name: string, index: number, defaultBit: number, defaultName: string): BladeInfo => ({
+  id: index,
+  name,
+  weaponName: `hana-${name}`,
+  weaponRole: "Tank",
+  elements: [defaultName],
+  elementMask: defaultBit,
+  index,
+  advancedNewGame: false,
+  canChangeElement: true,
+})
+
+const poppiJs = poppi("hana js", 0, 1 << 5, "earth")
+const poppiJk = poppi("hana jk", 1, 1 << 0, "fire")
+const poppiJd = poppi("hana jd", 2, 1 << 3, "ice")
+const coverFire = blade("cover-fire", 3, 1 << 0)
+const coverWater = blade("cover-water", 4, 1 << 1)
+const coverWind = blade("cover-wind", 5, 1 << 2)
+const coverIce = blade("cover-ice", 6, 1 << 3)
+const coverElec = blade("cover-elec", 7, 1 << 4)
+const coverEarth = blade("cover-earth", 8, 1 << 5)
+const coverDark = blade("cover-dark", 9, 1 << 6)
+const poppiDrivers = [
+  driver("rex", "Attacker", true),
+  driver("merefu", "Tank", false),
+  driver("tora", "Tank", false),
+]
+const poppiEffects = (d: string, b: string): string[] => {
+  if (d === "rex" && b === "cover-fire")
+    return ["break", "topple", "launch", "smash"]
+  return []
+}
+const poppiCatalog = mockCatalog({
+  blades: [poppiJs, poppiJk, poppiJd, coverFire, coverWater, coverWind, coverIce, coverElec, coverEarth, coverDark],
+  drivers: poppiDrivers,
+  effectsOf: poppiEffects,
+  candidates: [],
+  allElementsMask: 0b11111111,
+})
+const toraPoppiMembers = (opts: Partial<Pick<MemberState, "allowElementChange" | "bladeElements">> = {}): MemberState[] => [
+  member("rex", ["cover-fire", "cover-water", "cover-wind"]),
+  member("merefu", ["cover-ice", "cover-elec", "cover-earth"]),
+  member("tora", ["hana js", "hana jk", "hana jd"], opts),
+]
+
+const poppiDefault = solve(poppiCatalog, toraPoppiMembers(), false, new Map())
+assert(poppiDefault.length === 0, `default Poppi elements should miss light/dark, got ${poppiDefault.length}`)
+
+const poppiAny = solve(
+  poppiCatalog,
+  toraPoppiMembers({
+    allowElementChange: true,
+    bladeElements: [ANY_ELEMENT, ANY_ELEMENT, ANY_ELEMENT],
+  }),
+  false,
+  new Map(),
+)
+assert(poppiAny.length === 1, `wildcard Poppi elements should complete the set, got ${poppiAny.length}`)
+assert(
+  poppiAny[0]?.members[2]?.bladeElements.includes("light")
+    && poppiAny[0]?.members[2]?.bladeElements.includes("dark"),
+  "wildcard Poppi should be assigned the missing light and dark elements",
+)
+
+const poppiCustom = solve(
+  poppiCatalog,
+  toraPoppiMembers({
+    allowElementChange: true,
+    bladeElements: ["light", "dark", "fire"],
+  }),
+  false,
+  new Map(),
+)
+assert(poppiCustom.length === 1, `custom Poppi elements should complete the set, got ${poppiCustom.length}`)
+assert(
+  poppiCustom[0]?.members[2]?.bladeElements[0] === "light"
+    && poppiCustom[0]?.members[2]?.bladeElements[1] === "dark",
+  "result should keep the chosen custom elements",
+)
+
+const poppiCustomOff = solve(
+  poppiCatalog,
+  toraPoppiMembers({
+    allowElementChange: false,
+    bladeElements: ["light", "dark", "fire"],
+  }),
+  false,
+  new Map(),
+)
+assert(poppiCustomOff.length === 0, "custom elements must be ignored when allowElementChange is off")
+
 console.log("solver duplicate checks passed", {
   screenshotLike: oneFill.length,
   threeCandidates: threeFill.length,
@@ -202,4 +302,8 @@ console.log("solver duplicate checks passed", {
   uniqueWeaponCombo: comboFill.length,
   angOff: angOff.length,
   angOn: angOn.length,
+  poppiDefault: poppiDefault.length,
+  poppiAny: poppiAny.length,
+  poppiCustom: poppiCustom.length,
+  poppiCustomOff: poppiCustomOff.length,
 })

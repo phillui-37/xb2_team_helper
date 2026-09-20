@@ -64,7 +64,10 @@ export const sanitizeMembers = (
         return blade
       return catalog.isEligible(driver, blade, owners) ? blade : null
     }) as [SlotName, SlotName, SlotName]
-    return { ...member, driver, blades }
+    const bladeElements = member.bladeElements.map((choice, slot) =>
+      blades[slot] ? choice : null,
+    ) as MemberState['bladeElements']
+    return { ...member, driver, blades, bladeElements }
   })
 
 export const reconcileMembers = (

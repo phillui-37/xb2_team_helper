@@ -33,6 +33,8 @@ CREATE TABLE blade (
     element1_id INTEGER NOT NULL,
     element2_id INTEGER NULL,
     advanced_new_game BOOLEAN NOT NULL DEFAULT FALSE,
+    -- Poppi α / QT / QTπ can swap this via Poppiswap; element1 is the default.
+    can_change_element BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT fk_blade_weapon
         FOREIGN KEY (weapon_id) REFERENCES weapon(id),
     CONSTRAINT fk_blade_element1
@@ -313,6 +315,11 @@ FROM (
 join weapon w on w.name = b.w_name
 join element e1 on e1.name = b.e1
 left join element e2 on e2.name = b.e2;
+
+-- Poppi α / QT / QTπ can change element; Poppibuster cannot.
+UPDATE blade
+SET can_change_element = TRUE
+WHERE name IN ('hana js', 'hana jk', 'hana jd');
 
 -- Advanced New Game (New Game Plus) Torna blades.
 INSERT INTO blade (name, weapon_id, element1_id, element2_id, advanced_new_game)

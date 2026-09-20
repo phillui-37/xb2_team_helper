@@ -1,16 +1,78 @@
-import type { BladeOwners, Catalog, MemberState, TeamMember, TeamResult } from "../types/common"
+import type { BladeInfo, BladeOwners, Catalog, ElementChoice, MemberState, TeamMember, TeamResult } from "../types/common"
 
 export const RESULT_CAP = 100
 export const NIA = 'nia'
+const ANY_ELEMENT = '-'
+
+function elementContribution(
+  catalog: Catalog,
+  blade: BladeInfo,
+  allowElementChange: boolean,
+  choice: ElementChoice,
+): { mask: number; wildcards: number } {
+  if (!allowElementChange || !blade.canChangeElement)
+    return { mask: blade.elementMask, wildcards: 0 }
+  if (choice === ANY_ELEMENT)
+    return { mask: 0, wildcards: 1 }
+  if (!choice)
+    return { mask: blade.elementMask, wildcards: 0 }
+  const bit = catalog.elementIndex.get(choice)
+  if (bit === undefined)
+    return { mask: blade.elementMask, wildcards: 0 }
+  return { mask: 1 << bit, wildcards: 0 }
+}
+
+function assignWildcardElements(
+  catalog: Catalog,
+  states: MemberState[],
+  team: TeamMember[],
+  coveredMask: number,
+): { elementMask: number; members: TeamMember[] } {
+  const missing: number[] = []
+  for (let i = 0; i < catalog.elements.length; i++) {
+    if ((coveredMask & (1 << i)) === 0)
+      missing.push(i)
+  }
+  let elementMask = coveredMask
+  const members = team.map((member, index) => {
+    const state = states.find(s => s.driver === member.driver) ?? states[index]
+    const bladeElements: [ElementChoice, ElementChoice, ElementChoice] = [null, null, null]
+    for (let slot = 0; slot < 3; slot++) {
+      const name = member.blades[slot]
+      if (!name)
+        continue
+      const blade = catalog.bladeByName.get(name)
+      if (!blade?.canChangeElement || !state?.allowElementChange)
+        continue
+      const choice = state.bladeElements[slot]
+      if (choice === ANY_ELEMENT) {
+        const idx = missing.shift()
+        if (idx === undefined) {
+          bladeElements[slot] = ANY_ELEMENT
+        } else {
+          bladeElements[slot] = catalog.elements[idx] ?? ANY_ELEMENT
+          elementMask |= 1 << idx
+        }
+      } else {
+        bladeElements[slot] = choice ?? blade.elements[0] ?? null
+      }
+    }
+    return { ...member, bladeElements }
+  })
+  return { elementMask, members }
+}
 
 type DriverWork = {
   driver: string
   matchRole: boolean
   borrowBound: boolean
   uniqueWeapon: boolean
+  allowElementChange: boolean
+  bladeElements: [ElementChoice, ElementChoice, ElementChoice]
   locked: (string | null)[]
   emptyIdx: number[]
   lockedElem: number
+  lockedWildcards: number
   lockedEffects: [number, number, number, number]
   lockedMask: bigint
 }
@@ -92,9 +154,12 @@ function cloneWorks(works: DriverWork[]): DriverWork[] {
     matchRole: work.matchRole,
     borrowBound: work.borrowBound,
     uniqueWeapon: work.uniqueWeapon,
+    allowElementChange: work.allowElementChange,
+    bladeElements: [...work.bladeElements] as [ElementChoice, ElementChoice, ElementChoice],
     locked: [...work.locked],
     emptyIdx: [...work.emptyIdx],
     lockedElem: work.lockedElem,
+    lockedWildcards: work.lockedWildcards,
     lockedEffects: [...work.lockedEffects] as [number, number, number, number],
     lockedMask: work.lockedMask,
   }))
@@ -121,6 +186,7 @@ function hasDuplicateWeapon(catalog: Catalog, names: readonly (string | null)[])
 
 function recomputeLocked(catalog: Catalog, work: DriverWork): void {
   let lockedElem = 0
+  let lockedWildcards = 0
   const lockedEffects: [number, number, number, number] = [0, 0, 0, 0]
   let lockedMask = 0n
   const emptyIdx: number[] = []
@@ -133,7 +199,14 @@ function recomputeLocked(catalog: Catalog, work: DriverWork): void {
     const blade = catalog.bladeByName.get(name)
     if (!blade)
       continue
-    lockedElem |= blade.elementMask
+    const contrib = elementContribution(
+      catalog,
+      blade,
+      work.allowElementChange,
+      work.bladeElements[i] ?? null,
+    )
+    lockedElem |= contrib.mask
+    lockedWildcards += contrib.wildcards
     const delta = effectDelta(catalog, work.driver, name)
     lockedEffects[0] += delta[0]
     lockedEffects[1] += delta[1]
@@ -143,6 +216,7 @@ function recomputeLocked(catalog: Catalog, work: DriverWork): void {
   }
   work.emptyIdx = emptyIdx
   work.lockedElem = lockedElem
+  work.lockedWildcards = lockedWildcards
   work.lockedEffects = lockedEffects
   work.lockedMask = lockedMask
 }
@@ -239,38 +313,26 @@ export function solve(
     const driver = member.driver
     if (!driver)
       return []
-    let lockedElem = 0
-    const lockedEffects: [number, number, number, number] = [0, 0, 0, 0]
-    let lockedMask = 0n
-    const emptyIdx: number[] = []
-    for (let i = 0; i < 3; i++) {
-      const name = member.blades[i]
-      if (!name) {
-        emptyIdx.push(i)
-        continue
-      }
-      const blade = catalog.bladeByName.get(name)
-      if (!blade)
+    for (const name of member.blades) {
+      if (name && !catalog.bladeByName.get(name))
         return []
-      lockedElem |= blade.elementMask
-      const delta = effectDelta(catalog, driver, name)
-      lockedEffects[0] += delta[0]
-      lockedEffects[1] += delta[1]
-      lockedEffects[2] += delta[2]
-      lockedEffects[3] += delta[3]
-      lockedMask |= 1n << BigInt(blade.index)
     }
-    works.push({
+    const work: DriverWork = {
       driver,
       matchRole: member.matchRole,
       borrowBound: member.borrowBound,
       uniqueWeapon: member.uniqueWeapon,
+      allowElementChange: member.allowElementChange,
+      bladeElements: [...member.bladeElements],
       locked: [...member.blades],
-      emptyIdx,
-      lockedElem,
-      lockedEffects,
-      lockedMask,
-    })
+      emptyIdx: [],
+      lockedElem: 0,
+      lockedWildcards: 0,
+      lockedEffects: [0, 0, 0, 0],
+      lockedMask: 0n,
+    }
+    recomputeLocked(catalog, work)
+    works.push(work)
   }
 
   works.sort((a, b) => a.emptyIdx.length - b.emptyIdx.length)
@@ -279,6 +341,7 @@ export function solve(
     const found: TeamResult[] = []
     if (resultCap <= 0)
       return found
+    const planWildcards = planned.reduce((sum, work) => sum + work.lockedWildcards, 0)
 
     const search = (
       driverOrd: number,
@@ -290,13 +353,23 @@ export function solve(
       if (found.length >= resultCap)
         return
       if (driverOrd === planned.length) {
-        if (elem === catalog.allElementsMask && effectCounts.every(c => c >= need)) {
+        const missingElem = popcount(catalog.allElementsMask & ~elem)
+        if (missingElem <= planWildcards && effectCounts.every(c => c >= need)) {
           const team: TeamMember[] = members.map(m => {
             const driver = m.driver as string
             const blades = filled.get(driver) as string[]
-            return { driver, blades: [blades[0] as string, blades[1] as string, blades[2] as string] }
+            return {
+              driver,
+              blades: [blades[0] as string, blades[1] as string, blades[2] as string],
+              bladeElements: [null, null, null],
+            }
           })
-          found.push({ members: team, elementMask: elem, effectCounts: [...effectCounts] })
+          const resolved = assignWildcardElements(catalog, members, team, elem)
+          found.push({
+            members: resolved.members,
+            elementMask: resolved.elementMask,
+            effectCounts: [...effectCounts],
+          })
         }
         return
       }
@@ -306,7 +379,7 @@ export function solve(
         remainingSlots += planned[i]!.emptyIdx.length
       const missingElem = popcount(catalog.allElementsMask & ~elem)
       const missingEff = effectCounts.reduce((sum, c) => sum + Math.max(0, need - c), 0)
-      if (remainingSlots * 2 < missingElem || remainingSlots * 2 < missingEff)
+      if (remainingSlots * 2 + planWildcards < missingElem || remainingSlots * 2 < missingEff)
         return
 
       const work = planned[driverOrd] as DriverWork

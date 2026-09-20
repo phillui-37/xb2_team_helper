@@ -1,5 +1,6 @@
 import { Card, CardContent, Chip, Typography } from "@mui/material"
 import type { Catalog, TeamResult } from "../../types/common"
+import { ANY_ELEMENT } from "../../types/common"
 import { useI18n } from "../i18n/LanguageContext"
 
 export default function ResultList(props: {
@@ -24,11 +25,20 @@ export default function ResultList(props: {
                   <Typography variant="subtitle2">
                     {t(`driver.${member.driver}`)}
                   </Typography>
-                  {member.blades.map(blade => (
-                    <Typography key={blade} variant="body2">
-                      {t(`blade.${blade}`)}
-                    </Typography>
-                  ))}
+                  {member.blades.map((blade, slot) => {
+                    const override = member.bladeElements[slot]
+                    const elementLabel = !override
+                      ? null
+                      : override === ANY_ELEMENT
+                        ? t('ui.anyElement')
+                        : t(`element.${override}`)
+                    return (
+                      <Typography key={`${blade}-${slot}`} variant="body2">
+                        {t(`blade.${blade}`)}
+                        {elementLabel ? ` · ${elementLabel}` : ''}
+                      </Typography>
+                    )
+                  })}
                 </div>
               ))}
             </div>
