@@ -23,6 +23,7 @@ export type BladeInfo = {
   elementMask: number
   index: number
   advancedNewGame: boolean
+  auxCoreSlots: number
 }
 
 export type DriverInfo = {
@@ -42,6 +43,7 @@ export type TeamResult = {
   members: TeamMember[]
   elementMask: number
   effectCounts: [number, number, number, number]
+  auxCoreSlots: number
 }
 
 export type WeaponInfo = {

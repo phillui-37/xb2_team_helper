@@ -341,6 +341,7 @@ function bladeSelectDetails(
   const parts = [
     t(`weapon.${blade.weaponName}`),
     ...blade.elements.map(el => t(`element.${el}`)),
+    `${t('ui.auxCores')} ×${blade.auxCoreSlots}`,
   ]
   if (borrowed)
     parts.push(t('ui.borrowed'))
@@ -433,6 +434,9 @@ function BladeChips(props: { catalog: Catalog; driver: string; blade: string }) 
       {info?.elements.map(el => (
         <Chip key={el} size="small" variant="outlined" label={t(`element.${el}`)} />
       ))}
+      {info && (
+        <Chip size="small" variant="outlined" label={`${t('ui.auxCores')} ×${info.auxCoreSlots}`} />
+      )}
     </div>
   )
 }

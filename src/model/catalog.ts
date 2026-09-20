@@ -83,6 +83,7 @@ export function buildCatalog(raw: {
       elementMask,
       index,
       advancedNewGame: b.advanced_new_game,
+      auxCoreSlots: b.aux_core_slots,
     }
   })
   const bladeByName = new Map(blades.map(b => [b.name, b]))
