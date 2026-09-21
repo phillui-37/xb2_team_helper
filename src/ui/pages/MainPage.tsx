@@ -251,7 +251,7 @@ function AppShell(props: { catalog: Catalog }) {
               {calculating && <CircularProgress size={22} />}
             </div>
 
-            {teamMode === 'assign' ? (
+            {teamMode === 'assign' && (
               <div className="flex flex-col gap-3 md:flex-row">
                 {members.map((member, index) => (
                   <MemberColumn
@@ -269,7 +269,23 @@ function AppShell(props: { catalog: Catalog }) {
                   />
                 ))}
               </div>
-            ) : (
+            )}
+
+            {(teamMode === 'assign' || calculating || results) && (
+              <section className={`flex flex-col gap-2 ${teamMode === 'pool' ? 'max-h-[70vh] overflow-auto' : ''}`}>
+                <Typography variant="h6">{t('ui.results')}</Typography>
+                {calculating && <Typography color="text.secondary">{t('ui.loading')}</Typography>}
+                {results && (
+                  <ResultList
+                    catalog={catalog}
+                    results={results}
+                    showPriority={teamMode === 'pool'}
+                  />
+                )}
+              </section>
+            )}
+
+            {teamMode === 'pool' && (
               <PoolPage
                 catalog={catalog}
                 pool={pool}
@@ -294,18 +310,6 @@ function AppShell(props: { catalog: Catalog }) {
                 }}
               />
             )}
-
-            <section className="flex flex-col gap-2">
-              <Typography variant="h6">{t('ui.results')}</Typography>
-              {calculating && <Typography color="text.secondary">{t('ui.loading')}</Typography>}
-              {results && (
-                <ResultList
-                  catalog={catalog}
-                  results={results}
-                  showPriority={teamMode === 'pool'}
-                />
-              )}
-            </section>
           </>
         ))
         .with(1, () => (
