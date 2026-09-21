@@ -451,6 +451,22 @@ const toraOff = solveFromPool(toraPoolCatalog, {
 })
 assert(toraOff.every(team => team.members.every(m => m.driver !== "tora")), "allow Tora off must omit Tora")
 assert(toraOff.length === 0, "three-driver teams without Tora cannot be formed from only two drivers")
+assert(
+  toraOn.every(team => team.effectCounts.every(count => count >= 1)),
+  "pool teams must cover all four effects once",
+)
+
+const toraRedundancy = solveFromPool(toraPoolCatalog, {
+  pool: new Set(["cover-fire", "cover-water", "cover-wind", "cover-ice", "cover-elec", "cover-earth", "cover-dark", "cover-light"]),
+  allowTora: true,
+  redundancy: true,
+  advancedNewGame: false,
+  matchRole: true,
+  uniqueWeapon: false,
+  borrowBound: true,
+  roles: ["Attacker", "Tank", "Tank"],
+})
+assert(toraRedundancy.length === 0, "redundancy needs two blades per effect; one of each must fail")
 
 const roleDrivers = [
   driver("rex", "Attacker", true),
@@ -578,6 +594,7 @@ console.log("solver duplicate checks passed", {
   overflow: overflow.length,
   toraOn: toraOn.length,
   toraOff: toraOff.length,
+  toraRedundancy: toraRedundancy.length,
   balancedRoles: balancedRoles.length,
   twoAttackers: twoAttackers.length,
   boundKeep: boundKeep.length,
