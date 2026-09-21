@@ -1,4 +1,4 @@
-import { solve, teamMemoKey } from "../src/model/solver.ts"
+import { solve, solveFromPool, teamMemoKey, driverTriples } from "../src/model/solver.ts"
 import type { BladeInfo, Catalog, DriverInfo, MemberState, TeamMember } from "../src/types/common.ts"
 import { ANY_ELEMENT, emptyBladeElements } from "../src/types/common.ts"
 
@@ -43,6 +43,7 @@ function mockCatalog(opts: {
   return {
     bladeByName,
     driverByName,
+    drivers: opts.drivers,
     effectIndex,
     elements,
     elementIndex: new Map(elements.map((name, i) => [name, i])),
@@ -314,6 +315,121 @@ assert(
   sorted.every((team, i) => i === 0 || sorted[i - 1]!.auxCoreSlots >= team.auxCoreSlots),
   "results must be sorted by aux core slot count descending",
 )
+assert(sorted.every(team => team.poolHits === 0), "assign mode should not count pool hits")
+
+const triplesNoTora = driverTriples(false)
+assert(triplesNoTora.length === 4, `expected 4 core triples, got ${triplesNoTora.length}`)
+assert(triplesNoTora.every(t => t.length === 3 && !t.includes("tora")), "core triples must omit Tora")
+const triplesWithTora = driverTriples(true)
+assert(triplesWithTora.length === 10, `expected 10 triples with Tora, got ${triplesWithTora.length}`)
+assert(triplesWithTora.filter(t => t.includes("tora")).length === 6, "Tora should join 6 pairs")
+
+function driverWithFixed(name: string, role: string, canUseForeign: boolean, fixedBlades: string[]): DriverInfo {
+  return { id: 0, name, role, fixedBlades, canUseForeign }
+}
+
+const poolLow = blade("fill-pool", 20, 1, "w", false, 1)
+const poolMid = blade("fill-pool-mid", 21, 1, "w", false, 2)
+const otherHigh = blade("fill-other", 22, 1, "w", false, 5)
+const poolPriorityCatalog = mockCatalog({
+  blades: [...locked, poolLow, poolMid, otherHigh],
+  drivers,
+  effectsOf,
+  candidates: [poolLow, poolMid, otherHigh],
+})
+const poolMembers: MemberState[] = [
+  member("rex", ["seihai", "nia-blade", "corvin"], { borrowBound: true }),
+  member("merefu", ["kaguduchi", "wadatumi", "kasandra"]),
+  member("zig", ["saika", "wulfric", null]),
+]
+const poolPreferred = solve(
+  poolPriorityCatalog,
+  poolMembers,
+  true,
+  new Map(),
+  false,
+  new Set(["fill-pool", "fill-pool-mid"]),
+)
+assert(poolPreferred.length === 3, `pool priority: expected 3 teams, got ${poolPreferred.length}`)
+assert(poolPreferred[0]?.members[2]?.blades[2] === "fill-pool-mid", "highest aux among pool blades should rank first")
+assert(poolPreferred[0]?.poolHits === 1, "used pool blade should count as a hit")
+assert(
+  poolPreferred.every((team, i) => i === 0 || poolPreferred[i - 1]!.poolHits >= team.poolHits),
+  "pool hits must sort descending",
+)
+assert(
+  poolPreferred.some(team => team.members[2]?.blades[2] === "fill-other"),
+  "non-pool blades may still fill leftover slots",
+)
+
+const extraPool = Array.from({ length: 10 }, (_, i) => blade(`extra-pool-${i}`, 30 + i))
+const overflowCatalog = mockCatalog({
+  blades: [...locked, ...extraPool],
+  drivers,
+  effectsOf,
+  candidates: extraPool,
+})
+const overflowPool = new Set(extraPool.map(b => b.name))
+const overflow = solve(overflowCatalog, poolMembers, true, new Map(), false, overflowPool)
+assert(overflow.length > 0, "a 10-blade pool must still produce teams")
+assert(
+  overflow.every(team => team.members.flatMap(m => m.blades).filter(name => overflowPool.has(name)).length <= 1),
+  "only the empty slot can take a pool blade; the other 10 cannot all be used",
+)
+
+const toraDrivers = [
+  driverWithFixed("rex", "Attacker", true, ["seihai"]),
+  driverWithFixed("merefu", "Tank", false, ["kaguduchi"]),
+  driverWithFixed("tora", "Tank", false, ["hana js", "hana jk", "hana jd"]),
+]
+const coverLight = blade("cover-light", 10, 1 << 7)
+const seihaiFixed = blade("seihai", 11, (1 << 0) | (1 << 7), "seihai")
+const kaguduchiFixed = blade("kaguduchi", 12, 1 << 0, "whip")
+const toraPoolCatalog = mockCatalog({
+  blades: [
+    poppiJs, poppiJk, poppiJd, seihaiFixed, kaguduchiFixed,
+    coverFire, coverWater, coverWind, coverIce, coverElec, coverEarth, coverDark, coverLight,
+  ],
+  drivers: toraDrivers,
+  effectsOf: (d, b) => {
+    if (d === "rex" && b === "cover-fire")
+      return ["break", "topple"]
+    if (d === "merefu" && b === "cover-water")
+      return ["launch", "smash"]
+    return []
+  },
+  candidates: [coverFire, coverWater, coverWind, coverIce, coverElec, coverEarth, coverDark, coverLight],
+  allElementsMask: 0b11111111,
+})
+const toraOn = solveFromPool(toraPoolCatalog, {
+  pool: new Set(["cover-fire", "cover-water", "cover-wind", "cover-ice", "cover-elec", "cover-earth", "cover-dark", "cover-light"]),
+  allowTora: true,
+  redundancy: false,
+  advancedNewGame: false,
+  matchRole: true,
+  uniqueWeapon: false,
+  borrowBound: true,
+})
+assert(toraOn.length >= 1, `allow Tora should produce a team, got ${toraOn.length}`)
+assert(
+  toraOn.some(team => team.members.some(m => m.driver === "tora"
+    && m.blades.includes("hana js")
+    && m.blades.includes("hana jk")
+    && m.blades.includes("hana jd"))),
+  "Tora teams must include all three Poppi without them being in the pool",
+)
+
+const toraOff = solveFromPool(toraPoolCatalog, {
+  pool: new Set(["cover-fire", "cover-water", "cover-wind", "cover-ice", "cover-elec", "cover-earth", "cover-dark", "cover-light"]),
+  allowTora: false,
+  redundancy: false,
+  advancedNewGame: false,
+  matchRole: true,
+  uniqueWeapon: false,
+  borrowBound: true,
+})
+assert(toraOff.every(team => team.members.every(m => m.driver !== "tora")), "allow Tora off must omit Tora")
+assert(toraOff.length === 0, "three-driver teams without Tora cannot be formed from only two drivers")
 
 console.log("solver duplicate checks passed", {
   screenshotLike: oneFill.length,
@@ -328,4 +444,8 @@ console.log("solver duplicate checks passed", {
   poppiCustom: poppiCustom.length,
   poppiCustomOff: poppiCustomOff.length,
   auxCoreSort: sorted.map(team => team.auxCoreSlots),
+  poolPreferred: poolPreferred.map(team => [team.members[2]?.blades[2], team.poolHits, team.auxCoreSlots]),
+  overflow: overflow.length,
+  toraOn: toraOn.length,
+  toraOff: toraOff.length,
 })

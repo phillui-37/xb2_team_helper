@@ -6,6 +6,7 @@ import { useI18n } from "../i18n/LanguageContext"
 export default function ResultList(props: {
   catalog: Catalog
   results: TeamResult[]
+  showPriority?: boolean
 }) {
   const { t } = useI18n()
   if (props.results.length === 0) {
@@ -48,6 +49,14 @@ export default function ResultList(props: {
               ))}
             </div>
             <div className="flex flex-wrap gap-1">
+              {props.showPriority && (
+                <Chip
+                  size="small"
+                  color="secondary"
+                  variant="outlined"
+                  label={`${t('ui.priorityBlades')} ×${team.poolHits}`}
+                />
+              )}
               <Chip
                 size="small"
                 color="success"
