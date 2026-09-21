@@ -1,4 +1,4 @@
-import { solve, solveFromPool, teamMemoKey, driverTriples, DEFAULT_PARTY_ROLES } from "../src/model/solver.ts"
+import { solve, solveFromPool, teamMemoKey, driverTriples, DEFAULT_PARTY_ROLES, rexFillRole } from "../src/model/solver.ts"
 import type { BladeInfo, Catalog, DriverInfo, MemberState, TeamMember } from "../src/types/common.ts"
 import { ANY_ELEMENT, emptyBladeElements } from "../src/types/common.ts"
 
@@ -483,10 +483,32 @@ const roleCatalog = mockCatalog({
 })
 const roleNames = new Set(roleDrivers.map(d => d.name))
 const balancedRoles = driverTriples(true, roleNames, { catalog: roleCatalog, roles: DEFAULT_PARTY_ROLES })
-assert(balancedRoles.length === 4, `balanced roles: expected 4 triples, got ${balancedRoles.length}`)
-assert(balancedRoles.every(t => t.includes("nia")), "Attacker/Tank/Healer must include Nia")
-assert(balancedRoles.every(t => !(t.includes("rex") && t.includes("zig"))), "two attackers cannot fill one attacker slot")
-assert(balancedRoles.filter(t => t.includes("tora")).length === 2, "Tora should pair with each attacker + Nia")
+assert(balancedRoles.length === 7, `balanced roles: expected 7 triples with Rex fill-in, got ${balancedRoles.length}`)
+assert(
+  balancedRoles.some(t => t.includes("rex") && t.includes("zig") && t.includes("nia")),
+  "Rex can fill Tank when the other two are Attacker + Healer",
+)
+assert(
+  balancedRoles.some(t => t.includes("rex") && t.includes("zig") && t.includes("merefu")),
+  "Rex can fill Healer when the other two are Attacker + Tank",
+)
+assert(
+  balancedRoles.some(t => t.includes("rex") && t.includes("zig") && t.includes("tora")),
+  "Rex can fill Healer when the other two are Attacker + Tora",
+)
+assert(
+  !balancedRoles.some(t => t.includes("rex") && t.includes("merefu") && t.includes("tora")),
+  "Rex cannot be Healer when the other two are already both Tanks",
+)
+assert(
+  !balancedRoles.some(t => t.includes("nia") && t.includes("merefu") && t.includes("tora") && !t.includes("rex")),
+  "two tanks + healer without an attacker is not Attacker/Tank/Healer",
+)
+assert(balancedRoles.filter(t => t.includes("tora")).length === 3, "Tora appears in three valid Rex-fill or native triples")
+assert(rexFillRole(roleCatalog, ["rex", "zig", "nia"]) === "Tank", "Rex fills Tank beside Zeke + Nia")
+assert(rexFillRole(roleCatalog, ["rex", "zig", "merefu"]) === "Healer", "Rex fills Healer beside Zeke + Mòrag")
+assert(rexFillRole(roleCatalog, ["rex", "nia", "merefu"]) === null, "Rex stays Attacker beside Tank + Healer")
+assert(rexFillRole(roleCatalog, ["nia", "merefu", "zig"]) === null, "no Rex means no fill-in role")
 const twoAttackers = driverTriples(false, roleNames, {
   catalog: roleCatalog,
   roles: ["Attacker", "Attacker", "Tank"],

@@ -72,6 +72,7 @@ export default function PoolPage(props: {
       <Typography variant="body2" color="text.secondary">{t('ui.poolHint')}</Typography>
       <div className="flex flex-col gap-2">
         <Typography variant="subtitle2">{t('ui.partyRoles')}</Typography>
+        <Typography variant="body2" color="text.secondary">{t('ui.partyRolesHint')}</Typography>
         <div className="grid gap-2 sm:grid-cols-3">
           {props.roles.map((role, index) => (
             <FormControl key={index} size="small" fullWidth>

@@ -557,13 +557,71 @@ export type PoolSolveOptions = {
 const roleMultiset = (roles: readonly string[]): string =>
   [...roles].slice().sort().join('|')
 
+const consumeRole = (needed: Map<string, number>, role: string): boolean => {
+  const n = needed.get(role) ?? 0
+  if (n <= 0)
+    return false
+  needed.set(role, n - 1)
+  return true
+}
+
+const leftoverRoles = (needed: Map<string, number>): string[] => {
+  const leftover: string[] = []
+  for (const [role, count] of needed) {
+    for (let i = 0; i < count; i++)
+      leftover.push(role)
+  }
+  return leftover
+}
+
+/** Rex may stand in as Tank or Healer only to fill a role the other two drivers do not already cover. */
+export const rexFillRole = (
+  catalog: Catalog,
+  drivers: readonly string[],
+): PartyRole | null => {
+  if (!drivers.includes('rex'))
+    return null
+  const otherRoles = new Set(
+    drivers
+      .filter(driver => driver !== 'rex')
+      .map(driver => catalog.driverByName.get(driver)?.role)
+      .filter((role): role is string => !!role),
+  )
+  if (!otherRoles.has('Tank') && otherRoles.has('Healer'))
+    return 'Tank'
+  if (!otherRoles.has('Healer') && otherRoles.has('Tank'))
+    return 'Healer'
+  return null
+}
+
 export const tripleMatchesRoles = (
   catalog: Catalog,
   triple: readonly string[],
   roles: PartyRoles,
 ): boolean => {
-  const driverRoles = triple.map(driver => catalog.driverByName.get(driver)?.role ?? '')
-  return roleMultiset(driverRoles) === roleMultiset(roles)
+  const needed = new Map<string, number>()
+  for (const role of roles)
+    needed.set(role, (needed.get(role) ?? 0) + 1)
+
+  const others = triple.filter(driver => driver !== 'rex')
+  const hasRex = others.length !== triple.length
+  for (const driver of others) {
+    const role = catalog.driverByName.get(driver)?.role ?? ''
+    if (!consumeRole(needed, role))
+      return false
+  }
+
+  const leftover = leftoverRoles(needed)
+  if (!hasRex)
+    return leftover.length === 0
+  if (leftover.length !== 1)
+    return false
+  const fill = leftover[0]
+  if (fill === 'Attacker')
+    return true
+  if (fill !== 'Tank' && fill !== 'Healer')
+    return false
+  return rexFillRole(catalog, triple) === fill
 }
 
 export const driverTriples = (
