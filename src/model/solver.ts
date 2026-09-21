@@ -1,4 +1,4 @@
-import type { BladeInfo, BladeOwners, Catalog, ElementChoice, MemberState, TeamMember, TeamResult } from "../types/common"
+import type { BladeInfo, BladeOwners, Catalog, ElementChoice, MemberState, SlotName, TeamMember, TeamResult } from "../types/common"
 
 export const RESULT_CAP = 100
 export const NIA = 'nia'
@@ -151,6 +151,17 @@ export function teamAuxCoreSlots(catalog: Catalog, members: TeamMember[]): numbe
     }
   }
   return total
+}
+
+export function teamPoolHits(members: readonly TeamMember[], pool: ReadonlySet<string>): number {
+  let hits = 0
+  for (const member of members) {
+    for (const name of member.blades) {
+      if (pool.has(name))
+        hits += 1
+    }
+  }
+  return hits
 }
 
 /** Driver + slot identity for a completed team. */
@@ -311,6 +322,7 @@ export function solve(
   redundancy: boolean,
   owners: BladeOwners,
   advancedNewGame = false,
+  priorityPool?: ReadonlySet<string>,
 ): TeamResult[] {
   if (members.length !== 3 || members.some(m => !m.driver))
     return []
@@ -380,6 +392,7 @@ export function solve(
             elementMask: resolved.elementMask,
             effectCounts: [...effectCounts],
             auxCoreSlots: teamAuxCoreSlots(catalog, resolved.members),
+            poolHits: priorityPool ? teamPoolHits(resolved.members, priorityPool) : 0,
           })
         }
         return
@@ -409,14 +422,29 @@ export function solve(
           return false
         if (niaDriverPicked && b.name === NIA)
           return false
-        if (!work.borrowBound && catalog.isForeignBound(work.driver, b.name))
-          return false
+        if (catalog.isForeignBound(work.driver, b.name)) {
+          if (!work.borrowBound)
+            return false
+          if (!catalog.canBorrowBound(work.driver, b.name))
+            return false
+        }
         if (work.uniqueWeapon && lockedWeapons.has(b.weaponName))
           return false
         if (b.advancedNewGame && !advancedNewGame)
           return false
+        if (catalog.isBindsOnly(work.driver) && !catalog.isFixed(work.driver, b.name))
+          return false
         return true
       })
+      if (priorityPool) {
+        available.sort((a, b) => {
+          const ap = priorityPool.has(a.name) ? 0 : 1
+          const bp = priorityPool.has(b.name) ? 0 : 1
+          if (ap !== bp)
+            return ap - bp
+          return a.index - b.index
+        })
+      }
       const combos = combinations(available, work.emptyIdx.length)
 
       for (const combo of combos) {
@@ -499,6 +527,248 @@ export function solve(
         take(team)
     }
   }
-  results.sort((a, b) => b.auxCoreSlots - a.auxCoreSlots)
+  results.sort((a, b) => {
+    if (b.poolHits !== a.poolHits)
+      return b.poolHits - a.poolHits
+    return b.auxCoreSlots - a.auxCoreSlots
+  })
   return results
 }
+
+export const CORE_DRIVERS = ['rex', 'nia', 'merefu', 'zig'] as const
+const TORA = 'tora'
+const DRIVER_ORDER = ['rex', 'nia', 'merefu', 'zig', 'tora'] as const
+export const PARTY_ROLE_OPTIONS = ['Attacker', 'Tank', 'Healer'] as const
+export type PartyRole = typeof PARTY_ROLE_OPTIONS[number]
+export type PartyRoles = [PartyRole, PartyRole, PartyRole]
+export const DEFAULT_PARTY_ROLES: PartyRoles = ['Attacker', 'Tank', 'Healer']
+
+export type PoolSolveOptions = {
+  pool: ReadonlySet<string>
+  allowTora: boolean
+  redundancy: boolean
+  advancedNewGame: boolean
+  matchRole: boolean
+  uniqueWeapon: boolean
+  borrowBound: boolean
+  roles?: PartyRoles
+}
+
+const roleMultiset = (roles: readonly string[]): string =>
+  [...roles].slice().sort().join('|')
+
+const consumeRole = (needed: Map<string, number>, role: string): boolean => {
+  const n = needed.get(role) ?? 0
+  if (n <= 0)
+    return false
+  needed.set(role, n - 1)
+  return true
+}
+
+const leftoverRoles = (needed: Map<string, number>): string[] => {
+  const leftover: string[] = []
+  for (const [role, count] of needed) {
+    for (let i = 0; i < count; i++)
+      leftover.push(role)
+  }
+  return leftover
+}
+
+/** Rex may stand in as Tank or Healer only to fill a role the other two drivers do not already cover. */
+export const rexFillRole = (
+  catalog: Catalog,
+  drivers: readonly string[],
+): PartyRole | null => {
+  if (!drivers.includes('rex'))
+    return null
+  const otherRoles = new Set(
+    drivers
+      .filter(driver => driver !== 'rex')
+      .map(driver => catalog.driverByName.get(driver)?.role)
+      .filter((role): role is string => !!role),
+  )
+  if (!otherRoles.has('Tank') && otherRoles.has('Healer'))
+    return 'Tank'
+  if (!otherRoles.has('Healer') && otherRoles.has('Tank'))
+    return 'Healer'
+  return null
+}
+
+export const tripleMatchesRoles = (
+  catalog: Catalog,
+  triple: readonly string[],
+  roles: PartyRoles,
+): boolean => {
+  const needed = new Map<string, number>()
+  for (const role of roles)
+    needed.set(role, (needed.get(role) ?? 0) + 1)
+
+  const others = triple.filter(driver => driver !== 'rex')
+  const hasRex = others.length !== triple.length
+  for (const driver of others) {
+    const role = catalog.driverByName.get(driver)?.role ?? ''
+    if (!consumeRole(needed, role))
+      return false
+  }
+
+  const leftover = leftoverRoles(needed)
+  if (!hasRex)
+    return leftover.length === 0
+  if (leftover.length !== 1)
+    return false
+  const fill = leftover[0]
+  if (fill === 'Attacker')
+    return true
+  if (fill !== 'Tank' && fill !== 'Healer')
+    return false
+  return rexFillRole(catalog, triple) === fill
+}
+
+export const driverTriples = (
+  allowTora: boolean,
+  availableDrivers?: ReadonlySet<string>,
+  roleFilter?: { catalog: Catalog; roles: PartyRoles },
+): string[][] => {
+  const allowed = (name: string) => !availableDrivers || availableDrivers.has(name)
+  const core: string[] = CORE_DRIVERS.filter(allowed)
+  const triples: string[][] = combinations(core, 3)
+  if (allowTora && allowed(TORA)) {
+    for (const pair of combinations(core, 2))
+      triples.push([...pair, TORA])
+  }
+  const sorted = triples.map(triple =>
+    triple.slice().sort((a, b) => DRIVER_ORDER.indexOf(a as typeof DRIVER_ORDER[number])
+      - DRIVER_ORDER.indexOf(b as typeof DRIVER_ORDER[number])),
+  )
+  if (!roleFilter)
+    return sorted
+  return sorted.filter(triple => tripleMatchesRoles(roleFilter.catalog, triple, roleFilter.roles))
+}
+
+const memberForDriver = (
+  catalog: Catalog,
+  driver: string,
+  options: Pick<PoolSolveOptions, 'matchRole' | 'uniqueWeapon' | 'borrowBound'>,
+): MemberState => {
+  const info = catalog.driverByName.get(driver)
+  const blades: [SlotName, SlotName, SlotName] = [null, null, null]
+  info?.fixedBlades.forEach((name, i) => {
+    if (i < 3)
+      blades[i] = name
+  })
+  if (driver === TORA) {
+    return {
+      driver,
+      blades,
+      matchRole: true,
+      borrowBound: false,
+      uniqueWeapon: true,
+      allowElementChange: true,
+      bladeElements: [ANY_ELEMENT, ANY_ELEMENT, ANY_ELEMENT],
+    }
+  }
+  return {
+    driver,
+    blades,
+    matchRole: options.matchRole,
+    borrowBound: !!info?.canUseForeign && options.borrowBound,
+    uniqueWeapon: options.uniqueWeapon,
+    allowElementChange: false,
+    bladeElements: [null, null, null],
+  }
+}
+
+/** Bound pool blades go to a dedicated driver in the party. Rex only receives them when the owner is absent. */
+const assignBoundPoolBlades = (
+  catalog: Catalog,
+  members: MemberState[],
+  pool: ReadonlySet<string>,
+): MemberState[] => {
+  const triple = members.map(member => member.driver).filter((name): name is string => !!name)
+  const claimed = new Set<string>()
+  for (const member of members) {
+    for (const blade of member.blades) {
+      if (blade)
+        claimed.add(blade)
+    }
+  }
+  for (const name of pool) {
+    if (claimed.has(name))
+      continue
+    if (catalog.bladeSource(name) !== 'BINDED')
+      continue
+    if (name === NIA && triple.includes(NIA))
+      continue
+    const dedicated = catalog.dedicatedDrivers(name).filter(driver => triple.includes(driver))
+    if (dedicated.length === 0)
+      continue
+    const target = DRIVER_ORDER.find(driver =>
+      dedicated.includes(driver) && !catalog.driverByName.get(driver)?.canUseForeign)
+      ?? DRIVER_ORDER.find(driver => dedicated.includes(driver))
+    if (!target || catalog.isBindsOnly(target))
+      continue
+    const member = members.find(item => item.driver === target)
+    if (!member)
+      continue
+    const empty = member.blades.findIndex(blade => !blade)
+    if (empty < 0)
+      continue
+    member.blades[empty] = name
+    claimed.add(name)
+  }
+  return members
+}
+
+const comparePoolTeams = (a: TeamResult, b: TeamResult): number => {
+  if (b.poolHits !== a.poolHits)
+    return b.poolHits - a.poolHits
+  return b.auxCoreSlots - a.auxCoreSlots
+}
+
+export function solveFromPool(
+  catalog: Catalog,
+  options: PoolSolveOptions,
+): TeamResult[] {
+  const roles = options.roles ?? DEFAULT_PARTY_ROLES
+  const availableDrivers = new Set(catalog.drivers.map(d => d.name))
+  const triples = driverTriples(options.allowTora, availableDrivers, { catalog, roles })
+  const prepared = triples.map(triple =>
+    assignBoundPoolBlades(
+      catalog,
+      triple.map(driver => memberForDriver(catalog, driver, options)),
+      options.pool,
+    ),
+  )
+  const quota = Math.max(1, Math.floor(RESULT_CAP / Math.max(1, prepared.length)))
+  const buckets = prepared.map(members =>
+    solve(catalog, members, options.redundancy, new Map(), options.advancedNewGame, options.pool),
+  )
+  const results: TeamResult[] = []
+  const seen = new Set<string>()
+  const take = (team: TeamResult) => {
+    if (results.length >= RESULT_CAP)
+      return
+    const key = teamMemoKey(team.members)
+    if (seen.has(key))
+      return
+    seen.add(key)
+    results.push(team)
+  }
+  for (const bucket of buckets)
+    for (const team of bucket.slice(0, quota))
+      take(team)
+  if (results.length < RESULT_CAP) {
+    for (let i = 0; i < prepared.length; i++) {
+      if (results.length >= RESULT_CAP)
+        break
+      const already = Math.min(quota, buckets[i]!.length)
+      if (buckets[i]!.length < quota)
+        continue
+      for (const team of buckets[i]!.slice(already))
+        take(team)
+    }
+  }
+  results.sort(comparePoolTeams)
+  return results
+}
+

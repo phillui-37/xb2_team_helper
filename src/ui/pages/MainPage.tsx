@@ -2,17 +2,20 @@ import { useEffect, useMemo, useState } from "react"
 import { Button, Checkbox, CircularProgress, FormControlLabel, Tab, Tabs, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material"
 import { match, P } from "ts-pattern"
 import DB from "../../model/db"
-import { hasNiaBlade, hasNiaDriver, solve } from "../../model/solver"
+import { driverTriples, hasNiaBlade, hasNiaDriver, solve, solveFromPool } from "../../model/solver"
 import { readOwners, reconcileMembers, storeOwners } from "../../model/owners"
+import { isPoolableBlade, readAllowTora, readPartyRoles, readPool, storeAllowTora, storePartyRoles, storePool } from "../../model/pool"
 import type { Catalog, Language, MemberState, TeamResult } from "../../types/common"
 import { emptyBladeElements } from "../../types/common"
 import { LANGUAGES, useI18n } from "../i18n/LanguageContext"
 import MemberColumn from "../components/MemberColumn"
 import ResultList from "../components/ResultList"
 import AssignPage from "./AssignPage"
+import PoolPage from "./PoolPage"
 import WikiPage from "./wiki/WikiPage"
 
 type MainTab = 0 | 1 | 2
+type TeamMode = 'assign' | 'pool'
 
 const ANG_STORAGE_KEY = 'xb2-advanced-new-game'
 
@@ -68,7 +71,14 @@ function AppShell(props: { catalog: Catalog }) {
   const { catalog } = props
   const { t, lang, setLang } = useI18n()
   const [tab, setTab] = useState<MainTab>(0)
+  const [teamMode, setTeamMode] = useState<TeamMode>('assign')
   const [owners, setOwners] = useState<Map<string, string>>(() => readOwners(catalog))
+  const [pool, setPool] = useState<Set<string>>(() => readPool(catalog))
+  const [allowTora, setAllowTora] = useState(readAllowTora)
+  const [partyRoles, setPartyRoles] = useState(readPartyRoles)
+  const [poolMatchRole, setPoolMatchRole] = useState(true)
+  const [poolUniqueWeapon, setPoolUniqueWeapon] = useState(true)
+  const [poolBorrowBound, setPoolBorrowBound] = useState(true)
   const [members, setMembers] = useState<MemberState[]>([emptyMember(), emptyMember(), emptyMember()])
   const [redundancy, setRedundancy] = useState(false)
   const [advancedNewGame, setAdvancedNewGame] = useState(readAdvancedNewGame)
@@ -81,7 +91,15 @@ function AppShell(props: { catalog: Catalog }) {
   )
   const niaBladeTaken = hasNiaBlade(members)
   const niaDriverTaken = hasNiaDriver(members)
-  const canCalculate = members.every(m => m.driver)
+  const poolTriples = useMemo(
+    () => driverTriples(
+      allowTora,
+      new Set(catalog.drivers.map(driver => driver.name)),
+      { catalog, roles: partyRoles },
+    ),
+    [allowTora, catalog, partyRoles],
+  )
+  const canCalculate = teamMode === 'pool' ? poolTriples.length > 0 : members.every(m => m.driver)
 
   const updateMember = (index: number, next: MemberState) => {
     setMembers(ori => reconcileMembers(
@@ -97,6 +115,24 @@ function AppShell(props: { catalog: Catalog }) {
     storeOwners(next)
     setOwners(next)
     setMembers(ori => reconcileMembers(catalog, ori, next))
+    setResults(undefined)
+  }
+
+  const updatePool = (next: Set<string>) => {
+    storePool(next)
+    setPool(next)
+    setResults(undefined)
+  }
+
+  const updateAllowTora = (enabled: boolean) => {
+    storeAllowTora(enabled)
+    setAllowTora(enabled)
+    setResults(undefined)
+  }
+
+  const updatePartyRoles = (roles: typeof partyRoles) => {
+    storePartyRoles(roles)
+    setPartyRoles(roles)
     setResults(undefined)
   }
 
@@ -116,6 +152,14 @@ function AppShell(props: { catalog: Catalog }) {
         })),
         owners,
       ))
+      setPool(ori => {
+        const next = new Set([...ori].filter(name => {
+          const blade = catalog.bladeByName.get(name)
+          return !!blade && isPoolableBlade(catalog, blade, false)
+        }))
+        storePool(next)
+        return next
+      })
     }
     setResults(undefined)
   }
@@ -126,7 +170,18 @@ function AppShell(props: { catalog: Catalog }) {
     setCalculating(true)
     setResults(undefined)
     window.setTimeout(() => {
-      const found = solve(catalog, members, redundancy, owners, advancedNewGame)
+      const found = teamMode === 'pool'
+        ? solveFromPool(catalog, {
+          pool,
+          allowTora,
+          redundancy,
+          advancedNewGame,
+          matchRole: poolMatchRole,
+          uniqueWeapon: poolUniqueWeapon,
+          borrowBound: poolBorrowBound,
+          roles: partyRoles,
+        })
+        : solve(catalog, members, redundancy, owners, advancedNewGame)
       setResults(found)
       setCalculating(false)
     }, 0)
@@ -164,6 +219,20 @@ function AppShell(props: { catalog: Catalog }) {
         .with(0, () => (
           <>
             <div className="flex flex-wrap items-center gap-3">
+              <ToggleButtonGroup
+                exclusive
+                size="small"
+                value={teamMode}
+                onChange={(_event, value: TeamMode | null) => {
+                  if (!value || value === teamMode)
+                    return
+                  setTeamMode(value)
+                  setResults(undefined)
+                }}
+              >
+                <ToggleButton value="assign">{t('ui.modeAssign')}</ToggleButton>
+                <ToggleButton value="pool">{t('ui.modePool')}</ToggleButton>
+              </ToggleButtonGroup>
               <FormControlLabel
                 control={
                   <Checkbox
@@ -193,34 +262,74 @@ function AppShell(props: { catalog: Catalog }) {
                 {t('ui.calculate')}
               </Button>
               {!canCalculate && (
-                <Typography variant="body2" color="text.secondary">{t('ui.selectDrivers')}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {teamMode === 'pool' ? t('ui.selectPartyRoles') : t('ui.selectDrivers')}
+                </Typography>
               )}
               {calculating && <CircularProgress size={22} />}
             </div>
 
-            <div className="flex flex-col gap-3 md:flex-row">
-              {members.map((member, index) => (
-                <MemberColumn
-                  key={index}
-                  catalog={catalog}
-                  index={index}
-                  state={member}
-                  members={members}
-                  owners={owners}
-                  takenDrivers={takenDrivers}
-                  niaBladeTaken={niaBladeTaken}
-                  niaDriverTaken={niaDriverTaken}
-                  advancedNewGame={advancedNewGame}
-                  onChange={next => updateMember(index, next)}
-                />
-              ))}
-            </div>
+            {teamMode === 'assign' && (
+              <div className="flex flex-col gap-3 md:flex-row">
+                {members.map((member, index) => (
+                  <MemberColumn
+                    key={index}
+                    catalog={catalog}
+                    index={index}
+                    state={member}
+                    members={members}
+                    owners={owners}
+                    takenDrivers={takenDrivers}
+                    niaBladeTaken={niaBladeTaken}
+                    niaDriverTaken={niaDriverTaken}
+                    advancedNewGame={advancedNewGame}
+                    onChange={next => updateMember(index, next)}
+                  />
+                ))}
+              </div>
+            )}
 
-            <section className="flex flex-col gap-2">
-              <Typography variant="h6">{t('ui.results')}</Typography>
-              {calculating && <Typography color="text.secondary">{t('ui.loading')}</Typography>}
-              {results && <ResultList catalog={catalog} results={results} />}
-            </section>
+            {(teamMode === 'assign' || calculating || results) && (
+              <section className={`flex flex-col gap-2 ${teamMode === 'pool' ? 'max-h-[70vh] overflow-auto' : ''}`}>
+                <Typography variant="h6">{t('ui.results')}</Typography>
+                {calculating && <Typography color="text.secondary">{t('ui.loading')}</Typography>}
+                {results && (
+                  <ResultList
+                    catalog={catalog}
+                    results={results}
+                    showPriority={teamMode === 'pool'}
+                  />
+                )}
+              </section>
+            )}
+
+            {teamMode === 'pool' && (
+              <PoolPage
+                catalog={catalog}
+                pool={pool}
+                advancedNewGame={advancedNewGame}
+                allowTora={allowTora}
+                roles={partyRoles}
+                matchRole={poolMatchRole}
+                uniqueWeapon={poolUniqueWeapon}
+                borrowBound={poolBorrowBound}
+                onChange={updatePool}
+                onAllowToraChange={updateAllowTora}
+                onRolesChange={updatePartyRoles}
+                onMatchRoleChange={enabled => {
+                  setPoolMatchRole(enabled)
+                  setResults(undefined)
+                }}
+                onUniqueWeaponChange={enabled => {
+                  setPoolUniqueWeapon(enabled)
+                  setResults(undefined)
+                }}
+                onBorrowBoundChange={enabled => {
+                  setPoolBorrowBound(enabled)
+                  setResults(undefined)
+                }}
+              />
+            )}
           </>
         ))
         .with(1, () => (

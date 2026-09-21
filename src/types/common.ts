@@ -57,6 +57,8 @@ export type TeamResult = {
   elementMask: number
   effectCounts: [number, number, number, number]
   auxCoreSlots: number
+  /** How many equipped blades were in the user's priority pool. */
+  poolHits: number
 }
 
 export type WeaponInfo = {

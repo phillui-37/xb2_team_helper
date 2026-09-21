@@ -1,4 +1,4 @@
-import { solve, teamMemoKey } from "../src/model/solver.ts"
+import { solve, solveFromPool, teamMemoKey, driverTriples, DEFAULT_PARTY_ROLES, rexFillRole } from "../src/model/solver.ts"
 import type { BladeInfo, Catalog, DriverInfo, MemberState, TeamMember } from "../src/types/common.ts"
 import { ANY_ELEMENT, emptyBladeElements } from "../src/types/common.ts"
 
@@ -35,23 +35,43 @@ function mockCatalog(opts: {
   effectsOf: (driver: string, blade: string) => string[]
   candidates: BladeInfo[]
   allElementsMask?: number
+  binds?: Record<string, { drivers: string[]; fixed?: boolean }>
 }): Catalog {
   const bladeByName = new Map(opts.blades.map(b => [b.name, b]))
   const driverByName = new Map(opts.drivers.map(d => [d.name, d]))
   const effectIndex = new Map([["break", 0], ["topple", 1], ["launch", 2], ["smash", 3]])
   const elements = ["fire", "water", "wind", "ice", "electricity", "earth", "dark", "light"]
+  const binds = opts.binds ?? {}
   return {
     bladeByName,
     driverByName,
+    drivers: opts.drivers,
     effectIndex,
     elements,
     elementIndex: new Map(elements.map((name, i) => [name, i])),
     allElementsMask: opts.allElementsMask ?? 1,
     effectsOf: opts.effectsOf,
     solverCandidatesFor: () => opts.candidates,
-    isForeignBound: () => false,
+    isForeignBound: (driver, blade) => {
+      const dedicated = binds[blade]?.drivers ?? []
+      return dedicated.length > 0 && !dedicated.includes(driver)
+    },
     isEligible: () => true,
     isOnRole: () => true,
+    bladeSource: (blade) => {
+      const bind = binds[blade]
+      if (!bind)
+        return "FREE"
+      return bind.fixed ? "FIXED" : "BINDED"
+    },
+    dedicatedDrivers: (blade) => binds[blade]?.drivers ?? [],
+    isBindsOnly: (driver) => driver === "tora",
+    isFixed: (driver, blade) => !!binds[blade]?.fixed && (binds[blade]?.drivers.includes(driver) ?? false),
+    canBorrowBound: (driver, blade) => {
+      if (driver !== "rex")
+        return false
+      return blade !== "hana js" && blade !== "hana jk" && blade !== "hana jd"
+    },
   } as Catalog
 }
 
@@ -314,6 +334,270 @@ assert(
   sorted.every((team, i) => i === 0 || sorted[i - 1]!.auxCoreSlots >= team.auxCoreSlots),
   "results must be sorted by aux core slot count descending",
 )
+assert(sorted.every(team => team.poolHits === 0), "assign mode should not count pool hits")
+
+const triplesNoTora = driverTriples(false)
+assert(triplesNoTora.length === 4, `expected 4 core triples, got ${triplesNoTora.length}`)
+assert(triplesNoTora.every(t => t.length === 3 && !t.includes("tora")), "core triples must omit Tora")
+const triplesWithTora = driverTriples(true)
+assert(triplesWithTora.length === 10, `expected 10 triples with Tora, got ${triplesWithTora.length}`)
+assert(triplesWithTora.filter(t => t.includes("tora")).length === 6, "Tora should join 6 pairs")
+
+function driverWithFixed(name: string, role: string, canUseForeign: boolean, fixedBlades: string[]): DriverInfo {
+  return { id: 0, name, role, fixedBlades, canUseForeign }
+}
+
+const poolLow = blade("fill-pool", 20, 1, "w", false, 1)
+const poolMid = blade("fill-pool-mid", 21, 1, "w", false, 2)
+const otherHigh = blade("fill-other", 22, 1, "w", false, 5)
+const poolPriorityCatalog = mockCatalog({
+  blades: [...locked, poolLow, poolMid, otherHigh],
+  drivers,
+  effectsOf,
+  candidates: [poolLow, poolMid, otherHigh],
+})
+const poolMembers: MemberState[] = [
+  member("rex", ["seihai", "nia-blade", "corvin"], { borrowBound: true }),
+  member("merefu", ["kaguduchi", "wadatumi", "kasandra"]),
+  member("zig", ["saika", "wulfric", null]),
+]
+const poolPreferred = solve(
+  poolPriorityCatalog,
+  poolMembers,
+  true,
+  new Map(),
+  false,
+  new Set(["fill-pool", "fill-pool-mid"]),
+)
+assert(poolPreferred.length === 3, `pool priority: expected 3 teams, got ${poolPreferred.length}`)
+assert(poolPreferred[0]?.members[2]?.blades[2] === "fill-pool-mid", "highest aux among pool blades should rank first")
+assert(poolPreferred[0]?.poolHits === 1, "used pool blade should count as a hit")
+assert(
+  poolPreferred.every((team, i) => i === 0 || poolPreferred[i - 1]!.poolHits >= team.poolHits),
+  "pool hits must sort descending",
+)
+assert(
+  poolPreferred.some(team => team.members[2]?.blades[2] === "fill-other"),
+  "non-pool blades may still fill leftover slots",
+)
+
+const extraPool = Array.from({ length: 10 }, (_, i) => blade(`extra-pool-${i}`, 30 + i))
+const overflowCatalog = mockCatalog({
+  blades: [...locked, ...extraPool],
+  drivers,
+  effectsOf,
+  candidates: extraPool,
+})
+const overflowPool = new Set(extraPool.map(b => b.name))
+const overflow = solve(overflowCatalog, poolMembers, true, new Map(), false, overflowPool)
+assert(overflow.length > 0, "a 10-blade pool must still produce teams")
+assert(
+  overflow.every(team => team.members.flatMap(m => m.blades).filter(name => overflowPool.has(name)).length <= 1),
+  "only the empty slot can take a pool blade; the other 10 cannot all be used",
+)
+
+const toraDrivers = [
+  driverWithFixed("rex", "Attacker", true, ["seihai"]),
+  driverWithFixed("merefu", "Tank", false, ["kaguduchi"]),
+  driverWithFixed("tora", "Tank", false, ["hana js", "hana jk", "hana jd"]),
+]
+const coverLight = blade("cover-light", 10, 1 << 7)
+const seihaiFixed = blade("seihai", 11, (1 << 0) | (1 << 7), "seihai")
+const kaguduchiFixed = blade("kaguduchi", 12, 1 << 0, "whip")
+const toraPoolCatalog = mockCatalog({
+  blades: [
+    poppiJs, poppiJk, poppiJd, seihaiFixed, kaguduchiFixed,
+    coverFire, coverWater, coverWind, coverIce, coverElec, coverEarth, coverDark, coverLight,
+  ],
+  drivers: toraDrivers,
+  effectsOf: (d, b) => {
+    if (d === "rex" && b === "cover-fire")
+      return ["break", "topple"]
+    if (d === "merefu" && b === "cover-water")
+      return ["launch", "smash"]
+    return []
+  },
+  candidates: [coverFire, coverWater, coverWind, coverIce, coverElec, coverEarth, coverDark, coverLight],
+  allElementsMask: 0b11111111,
+})
+const toraOn = solveFromPool(toraPoolCatalog, {
+  pool: new Set(["cover-fire", "cover-water", "cover-wind", "cover-ice", "cover-elec", "cover-earth", "cover-dark", "cover-light"]),
+  allowTora: true,
+  redundancy: false,
+  advancedNewGame: false,
+  matchRole: true,
+  uniqueWeapon: false,
+  borrowBound: true,
+  roles: ["Attacker", "Tank", "Tank"],
+})
+assert(toraOn.length >= 1, `allow Tora should produce a team, got ${toraOn.length}`)
+assert(
+  toraOn.some(team => team.members.some(m => m.driver === "tora"
+    && m.blades.includes("hana js")
+    && m.blades.includes("hana jk")
+    && m.blades.includes("hana jd"))),
+  "Tora teams must include all three Poppi without them being in the pool",
+)
+
+const toraOff = solveFromPool(toraPoolCatalog, {
+  pool: new Set(["cover-fire", "cover-water", "cover-wind", "cover-ice", "cover-elec", "cover-earth", "cover-dark", "cover-light"]),
+  allowTora: false,
+  redundancy: false,
+  advancedNewGame: false,
+  matchRole: true,
+  uniqueWeapon: false,
+  borrowBound: true,
+  roles: ["Attacker", "Tank", "Tank"],
+})
+assert(toraOff.every(team => team.members.every(m => m.driver !== "tora")), "allow Tora off must omit Tora")
+assert(toraOff.length === 0, "three-driver teams without Tora cannot be formed from only two drivers")
+assert(
+  toraOn.every(team => team.effectCounts.every(count => count >= 1)),
+  "pool teams must cover all four effects once",
+)
+
+const toraRedundancy = solveFromPool(toraPoolCatalog, {
+  pool: new Set(["cover-fire", "cover-water", "cover-wind", "cover-ice", "cover-elec", "cover-earth", "cover-dark", "cover-light"]),
+  allowTora: true,
+  redundancy: true,
+  advancedNewGame: false,
+  matchRole: true,
+  uniqueWeapon: false,
+  borrowBound: true,
+  roles: ["Attacker", "Tank", "Tank"],
+})
+assert(toraRedundancy.length === 0, "redundancy needs two blades per effect; one of each must fail")
+
+const roleDrivers = [
+  driver("rex", "Attacker", true),
+  driver("nia", "Healer", false),
+  driver("merefu", "Tank", false),
+  driver("zig", "Attacker", false),
+  driver("tora", "Tank", false),
+]
+const roleCatalog = mockCatalog({
+  blades: [blade("x", 0)],
+  drivers: roleDrivers,
+  effectsOf: () => [],
+  candidates: [],
+})
+const roleNames = new Set(roleDrivers.map(d => d.name))
+const balancedRoles = driverTriples(true, roleNames, { catalog: roleCatalog, roles: DEFAULT_PARTY_ROLES })
+assert(balancedRoles.length === 7, `balanced roles: expected 7 triples with Rex fill-in, got ${balancedRoles.length}`)
+assert(
+  balancedRoles.some(t => t.includes("rex") && t.includes("zig") && t.includes("nia")),
+  "Rex can fill Tank when the other two are Attacker + Healer",
+)
+assert(
+  balancedRoles.some(t => t.includes("rex") && t.includes("zig") && t.includes("merefu")),
+  "Rex can fill Healer when the other two are Attacker + Tank",
+)
+assert(
+  balancedRoles.some(t => t.includes("rex") && t.includes("zig") && t.includes("tora")),
+  "Rex can fill Healer when the other two are Attacker + Tora",
+)
+assert(
+  !balancedRoles.some(t => t.includes("rex") && t.includes("merefu") && t.includes("tora")),
+  "Rex cannot be Healer when the other two are already both Tanks",
+)
+assert(
+  !balancedRoles.some(t => t.includes("nia") && t.includes("merefu") && t.includes("tora") && !t.includes("rex")),
+  "two tanks + healer without an attacker is not Attacker/Tank/Healer",
+)
+assert(balancedRoles.filter(t => t.includes("tora")).length === 3, "Tora appears in three valid Rex-fill or native triples")
+assert(rexFillRole(roleCatalog, ["rex", "zig", "nia"]) === "Tank", "Rex fills Tank beside Zeke + Nia")
+assert(rexFillRole(roleCatalog, ["rex", "zig", "merefu"]) === "Healer", "Rex fills Healer beside Zeke + Mòrag")
+assert(rexFillRole(roleCatalog, ["rex", "nia", "merefu"]) === null, "Rex stays Attacker beside Tank + Healer")
+assert(rexFillRole(roleCatalog, ["nia", "merefu", "zig"]) === null, "no Rex means no fill-in role")
+const twoAttackers = driverTriples(false, roleNames, {
+  catalog: roleCatalog,
+  roles: ["Attacker", "Attacker", "Tank"],
+})
+assert(twoAttackers.length === 1, `two attackers + tank: expected 1 triple, got ${twoAttackers.length}`)
+assert(twoAttackers[0]?.includes("rex") && twoAttackers[0]?.includes("zig") && twoAttackers[0]?.includes("merefu"), "Rex + Zeke + Mòrag")
+
+const wadatumi = blade("wadatumi", 40)
+const boundFills = [41, 42, 43, 44, 45].map(index => blade(`bound-fill-${index}`, index))
+const boundDrivers = [
+  driverWithFixed("rex", "Attacker", true, ["seihai"]),
+  driverWithFixed("nia", "Healer", false, ["pyauko"]),
+  driverWithFixed("merefu", "Tank", false, ["kaguduchi"]),
+]
+const boundCatalog = mockCatalog({
+  blades: [blade("seihai", 0), blade("pyauko", 1), blade("kaguduchi", 2), wadatumi, ...boundFills],
+  drivers: boundDrivers,
+  effectsOf: (d, b) => {
+    if (d === "rex" && b === "seihai")
+      return ["break", "topple", "launch", "smash"]
+    return []
+  },
+  candidates: [wadatumi, ...boundFills],
+  binds: {
+    seihai: { drivers: ["rex"], fixed: true },
+    pyauko: { drivers: ["nia"], fixed: true },
+    kaguduchi: { drivers: ["merefu"], fixed: true },
+    wadatumi: { drivers: ["merefu"] },
+  },
+})
+const boundKeep = solveFromPool(boundCatalog, {
+  pool: new Set(["wadatumi"]),
+  allowTora: false,
+  redundancy: false,
+  advancedNewGame: false,
+  matchRole: false,
+  uniqueWeapon: false,
+  borrowBound: false,
+  roles: DEFAULT_PARTY_ROLES,
+})
+assert(boundKeep.length >= 1, `bound owner keep: expected teams, got ${boundKeep.length}`)
+assert(
+  boundKeep.every(team => {
+    const merefu = team.members.find(m => m.driver === "merefu")
+    const rex = team.members.find(m => m.driver === "rex")
+    return !!merefu?.blades.includes("wadatumi") && !rex?.blades.includes("wadatumi")
+  }),
+  "Mòrag's bound blade must stay on Mòrag when Rex is not borrowing",
+)
+assert(
+  boundKeep.every(team => team.members.every(m => m.driver !== "tora")),
+  "Tora must stay out when allow Tora is off",
+)
+
+const poppiFills = [50, 51, 52, 53].map(index => blade(`poppi-fill-${index}`, index))
+const poppiCandidates = mockCatalog({
+  blades: [poppiJs, poppiJk, poppiJd, seihaiFixed, kaguduchiFixed, coverFire, ...poppiFills],
+  drivers: [
+    driverWithFixed("rex", "Attacker", true, ["seihai"]),
+    driverWithFixed("merefu", "Tank", false, ["kaguduchi"]),
+    driverWithFixed("tora", "Tank", false, ["hana js", "hana jk", "hana jd"]),
+  ],
+  effectsOf: (d, b) => (d === "rex" && b === "cover-fire" ? ["break", "topple", "launch", "smash"] : []),
+  candidates: [poppiJs, poppiJk, poppiJd, coverFire, ...poppiFills],
+  binds: {
+    seihai: { drivers: ["rex"], fixed: true },
+    kaguduchi: { drivers: ["merefu"], fixed: true },
+    "hana js": { drivers: ["tora"], fixed: true },
+    "hana jk": { drivers: ["tora"], fixed: true },
+    "hana jd": { drivers: ["tora"], fixed: true },
+  },
+})
+const poppiGuard = solveFromPool(poppiCandidates, {
+  pool: new Set(["cover-fire"]),
+  allowTora: true,
+  redundancy: false,
+  advancedNewGame: false,
+  matchRole: false,
+  uniqueWeapon: false,
+  borrowBound: true,
+  roles: ["Attacker", "Tank", "Tank"],
+})
+assert(
+  poppiGuard.every(team => team.members.every(m =>
+    m.driver === "tora"
+      ? m.blades.every(b => b === "hana js" || b === "hana jk" || b === "hana jd")
+      : !m.blades.includes("hana js") && !m.blades.includes("hana jk") && !m.blades.includes("hana jd"))),
+  "Poppi stay on Tora; Rex cannot borrow them",
+)
 
 console.log("solver duplicate checks passed", {
   screenshotLike: oneFill.length,
@@ -328,4 +612,13 @@ console.log("solver duplicate checks passed", {
   poppiCustom: poppiCustom.length,
   poppiCustomOff: poppiCustomOff.length,
   auxCoreSort: sorted.map(team => team.auxCoreSlots),
+  poolPreferred: poolPreferred.map(team => [team.members[2]?.blades[2], team.poolHits, team.auxCoreSlots]),
+  overflow: overflow.length,
+  toraOn: toraOn.length,
+  toraOff: toraOff.length,
+  toraRedundancy: toraRedundancy.length,
+  balancedRoles: balancedRoles.length,
+  twoAttackers: twoAttackers.length,
+  boundKeep: boundKeep.length,
+  poppiGuard: poppiGuard.length,
 })

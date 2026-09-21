@@ -1,11 +1,13 @@
 import { Card, CardContent, Chip, Typography } from "@mui/material"
 import type { Catalog, TeamResult } from "../../types/common"
 import { ANY_ELEMENT } from "../../types/common"
+import { rexFillRole } from "../../model/solver"
 import { useI18n } from "../i18n/LanguageContext"
 
 export default function ResultList(props: {
   catalog: Catalog
   results: TeamResult[]
+  showPriority?: boolean
 }) {
   const { t } = useI18n()
   if (props.results.length === 0) {
@@ -20,10 +22,15 @@ export default function ResultList(props: {
         <Card key={i} variant="outlined">
           <CardContent className="flex flex-col gap-3">
             <div className="grid gap-3 md:grid-cols-3">
-              {team.members.map(member => (
-                <div key={member.driver} className="flex flex-col gap-1">
+              {team.members.map(member => {
+                const fill = member.driver === 'rex'
+                  ? rexFillRole(props.catalog, team.members.map(item => item.driver))
+                  : null
+                return (
+                  <div key={member.driver} className="flex flex-col gap-1">
                   <Typography variant="subtitle2">
                     {t(`driver.${member.driver}`)}
+                    {fill ? ` · ${t('ui.rexFill', { role: t(`role.${fill}`) })}` : ''}
                   </Typography>
                   {member.blades.map((blade, slot) => {
                     const override = member.bladeElements[slot]
@@ -44,10 +51,19 @@ export default function ResultList(props: {
                       </Typography>
                     )
                   })}
-                </div>
-              ))}
+                  </div>
+                )
+              })}
             </div>
             <div className="flex flex-wrap gap-1">
+              {props.showPriority && (
+                <Chip
+                  size="small"
+                  color="secondary"
+                  variant="outlined"
+                  label={`${t('ui.priorityBlades')} ×${team.poolHits}`}
+                />
+              )}
               <Chip
                 size="small"
                 color="success"
