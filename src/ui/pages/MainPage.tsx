@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react"
 import { Button, Checkbox, CircularProgress, FormControlLabel, Tab, Tabs, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material"
 import { match, P } from "ts-pattern"
 import DB from "../../model/db"
-import { hasNiaBlade, hasNiaDriver, solve, solveFromPool } from "../../model/solver"
+import { driverTriples, hasNiaBlade, hasNiaDriver, solve, solveFromPool } from "../../model/solver"
 import { readOwners, reconcileMembers, storeOwners } from "../../model/owners"
-import { isPoolableBlade, readAllowTora, readPool, storeAllowTora, storePool } from "../../model/pool"
+import { isPoolableBlade, readAllowTora, readPartyRoles, readPool, storeAllowTora, storePartyRoles, storePool } from "../../model/pool"
 import type { Catalog, Language, MemberState, TeamResult } from "../../types/common"
 import { emptyBladeElements } from "../../types/common"
 import { LANGUAGES, useI18n } from "../i18n/LanguageContext"
@@ -75,6 +75,7 @@ function AppShell(props: { catalog: Catalog }) {
   const [owners, setOwners] = useState<Map<string, string>>(() => readOwners(catalog))
   const [pool, setPool] = useState<Set<string>>(() => readPool(catalog))
   const [allowTora, setAllowTora] = useState(readAllowTora)
+  const [partyRoles, setPartyRoles] = useState(readPartyRoles)
   const [poolMatchRole, setPoolMatchRole] = useState(true)
   const [poolUniqueWeapon, setPoolUniqueWeapon] = useState(true)
   const [poolBorrowBound, setPoolBorrowBound] = useState(true)
@@ -90,7 +91,15 @@ function AppShell(props: { catalog: Catalog }) {
   )
   const niaBladeTaken = hasNiaBlade(members)
   const niaDriverTaken = hasNiaDriver(members)
-  const canCalculate = teamMode === 'pool' || members.every(m => m.driver)
+  const poolTriples = useMemo(
+    () => driverTriples(
+      allowTora,
+      new Set(catalog.drivers.map(driver => driver.name)),
+      { catalog, roles: partyRoles },
+    ),
+    [allowTora, catalog, partyRoles],
+  )
+  const canCalculate = teamMode === 'pool' ? poolTriples.length > 0 : members.every(m => m.driver)
 
   const updateMember = (index: number, next: MemberState) => {
     setMembers(ori => reconcileMembers(
@@ -118,6 +127,12 @@ function AppShell(props: { catalog: Catalog }) {
   const updateAllowTora = (enabled: boolean) => {
     storeAllowTora(enabled)
     setAllowTora(enabled)
+    setResults(undefined)
+  }
+
+  const updatePartyRoles = (roles: typeof partyRoles) => {
+    storePartyRoles(roles)
+    setPartyRoles(roles)
     setResults(undefined)
   }
 
@@ -164,6 +179,7 @@ function AppShell(props: { catalog: Catalog }) {
           matchRole: poolMatchRole,
           uniqueWeapon: poolUniqueWeapon,
           borrowBound: poolBorrowBound,
+          roles: partyRoles,
         })
         : solve(catalog, members, redundancy, owners, advancedNewGame)
       setResults(found)
@@ -246,7 +262,9 @@ function AppShell(props: { catalog: Catalog }) {
                 {t('ui.calculate')}
               </Button>
               {!canCalculate && (
-                <Typography variant="body2" color="text.secondary">{t('ui.selectDrivers')}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {teamMode === 'pool' ? t('ui.selectPartyRoles') : t('ui.selectDrivers')}
+                </Typography>
               )}
               {calculating && <CircularProgress size={22} />}
             </div>
@@ -291,11 +309,13 @@ function AppShell(props: { catalog: Catalog }) {
                 pool={pool}
                 advancedNewGame={advancedNewGame}
                 allowTora={allowTora}
+                roles={partyRoles}
                 matchRole={poolMatchRole}
                 uniqueWeapon={poolUniqueWeapon}
                 borrowBound={poolBorrowBound}
                 onChange={updatePool}
                 onAllowToraChange={updateAllowTora}
+                onRolesChange={updatePartyRoles}
                 onMatchRoleChange={enabled => {
                   setPoolMatchRole(enabled)
                   setResults(undefined)

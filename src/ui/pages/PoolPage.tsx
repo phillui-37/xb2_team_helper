@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react"
-import { Button, Checkbox, Chip, FormControlLabel, TextField, Typography } from "@mui/material"
+import { Button, Checkbox, Chip, FormControl, FormControlLabel, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material"
 import { match } from "ts-pattern"
 import type { BladeSource, Catalog } from "../../types/common"
 import { isPoolableBlade } from "../../model/pool"
+import { PARTY_ROLE_OPTIONS, type PartyRole, type PartyRoles } from "../../model/solver"
 import { useI18n } from "../i18n/LanguageContext"
 import { fuzzyFilterOptions } from "../misc/search"
 
@@ -18,11 +19,13 @@ export default function PoolPage(props: {
   pool: Set<string>
   advancedNewGame: boolean
   allowTora: boolean
+  roles: PartyRoles
   matchRole: boolean
   uniqueWeapon: boolean
   borrowBound: boolean
   onChange: (pool: Set<string>) => void
   onAllowToraChange: (enabled: boolean) => void
+  onRolesChange: (roles: PartyRoles) => void
   onMatchRoleChange: (enabled: boolean) => void
   onUniqueWeaponChange: (enabled: boolean) => void
   onBorrowBoundChange: (enabled: boolean) => void
@@ -67,6 +70,31 @@ export default function PoolPage(props: {
   return (
     <div className="flex flex-col gap-4">
       <Typography variant="body2" color="text.secondary">{t('ui.poolHint')}</Typography>
+      <div className="flex flex-col gap-2">
+        <Typography variant="subtitle2">{t('ui.partyRoles')}</Typography>
+        <div className="grid gap-2 sm:grid-cols-3">
+          {props.roles.map((role, index) => (
+            <FormControl key={index} size="small" fullWidth>
+              <InputLabel id={`party-role-${index}`} shrink>{`${t('ui.roleMatch')} ${index + 1}`}</InputLabel>
+              <Select
+                labelId={`party-role-${index}`}
+                label={`${t('ui.roleMatch')} ${index + 1}`}
+                value={role}
+                notched
+                onChange={event => {
+                  const next: PartyRoles = [props.roles[0], props.roles[1], props.roles[2]]
+                  next[index] = event.target.value as PartyRole
+                  props.onRolesChange(next)
+                }}
+              >
+                {PARTY_ROLE_OPTIONS.map(option => (
+                  <MenuItem key={option} value={option}>{t(`role.${option}`)}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          ))}
+        </div>
+      </div>
       <div className="flex flex-col gap-1">
         <FormControlLabel
           control={
@@ -142,6 +170,16 @@ export default function PoolPage(props: {
                     </div>
                     <div className="mt-1 flex flex-wrap gap-1">
                       <Chip size="small" variant="outlined" color="secondary" label={t(`weapon.${blade.weaponName}`)} />
+                      <Chip size="small" variant="outlined" label={t(`role.${blade.weaponRole}`)} />
+                      {catalog.dedicatedDrivers(blade.name).map(driver => (
+                        <Chip
+                          key={driver}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                          label={`${t('ui.dedicated')}: ${t(`driver.${driver}`)}`}
+                        />
+                      ))}
                       {blade.elements.map(el => (
                         <Chip
                           key={el}
