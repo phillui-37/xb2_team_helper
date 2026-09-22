@@ -1,4 +1,3 @@
-import { Predicate } from "effect"
 import { match, P } from "ts-pattern"
 import type { BladeInfo, BladeOwners, Catalog, MemberState } from "../types/common"
 import { DRIVER_NIA } from "../types/common"
@@ -12,42 +11,38 @@ export type CriterionContext = {
   owners: BladeOwners
 }
 
-/**
- * Labeled Predicate — Boolean algebra via Predicate.every / some / not.
- * Combine into richer criteria without writing new SQL.
- */
 export type Criterion = {
   readonly label: string
-  readonly predicate: Predicate.Predicate<CriterionContext>
+  readonly predicate: (ctx: CriterionContext) => boolean
 }
 
 export const criterion = (
   label: string,
-  predicate: Predicate.Predicate<CriterionContext>,
+  predicate: (ctx: CriterionContext) => boolean,
 ): Criterion => ({ label, predicate })
 
 export const pass: Criterion = criterion("pass", () => true)
 
 const combine = (
   kind: "and" | "or",
-  join: (preds: Predicate.Predicate<CriterionContext>[]) => Predicate.Predicate<CriterionContext>,
+  join: (ctx: CriterionContext, preds: Criterion[]) => boolean,
   xs: Criterion[],
 ): Criterion =>
   match(xs)
     .with([], () => pass)
     .with([P.select()], c => c)
     .otherwise(all =>
-      criterion(`${kind}(${all.map(c => c.label).join(", ")})`, join(all.map(c => c.predicate))),
+      criterion(`${kind}(${all.map(c => c.label).join(", ")})`, ctx => join(ctx, all)),
     )
 
 export const and = (...xs: Criterion[]): Criterion =>
-  combine("and", Predicate.every, xs)
+  combine("and", (ctx, all) => all.every(c => c.predicate(ctx)), xs)
 
 export const or = (...xs: Criterion[]): Criterion =>
-  combine("or", Predicate.some, xs)
+  combine("or", (ctx, all) => all.some(c => c.predicate(ctx)), xs)
 
 export const not = (c: Criterion): Criterion =>
-  criterion(`not(${c.label})`, Predicate.not(c.predicate))
+  criterion(`not(${c.label})`, ctx => !c.predicate(ctx))
 
 export const eligible: Criterion = criterion("eligible", ctx =>
   ctx.catalog.isEligible(ctx.driver, ctx.blade.name, ctx.owners))

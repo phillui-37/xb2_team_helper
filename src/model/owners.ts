@@ -1,16 +1,17 @@
-import { Schema } from "effect"
 import type { BladeOwners, Catalog, MemberState, SlotName } from "../types/common"
-import { OwnersJsonSchema } from "./data/rowSchema"
 import { readJson, writeJson } from "./storage"
 
 const STORAGE_KEY = 'xb2-blade-owners'
 
 const parseOwners = (raw: unknown): Record<string, string> | undefined => {
-  try {
-    return Schema.decodeUnknownSync(OwnersJsonSchema)(raw)
-  } catch {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw))
     return undefined
+  const owners: Record<string, string> = {}
+  for (const [blade, driver] of Object.entries(raw)) {
+    if (typeof driver === 'string')
+      owners[blade] = driver
   }
+  return owners
 }
 
 const acceptOwner = (catalog: Catalog, blade: string, driver: string): boolean =>

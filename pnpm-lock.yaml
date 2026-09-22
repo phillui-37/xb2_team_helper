@@ -26,9 +26,6 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.3.3
         version: 4.3.3(vite@8.2.2(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15))
-      effect:
-        specifier: 4.0.0-rc.116
-        version: 4.0.0-rc.116
       i18next:
         specifier: ^26.4.2
         version: 26.4.2(typescript@7.0.2)
@@ -66,6 +63,9 @@ importers:
       '@vitejs/plugin-react':
         specifier: ^6.1.1
         version: 6.1.1(vite@8.2.2(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15))
+      effect:
+        specifier: 4.0.0-rc.116
+        version: 4.0.0-rc.116
       tsx:
         specifier: ^4.23.15
         version: 4.23.15
