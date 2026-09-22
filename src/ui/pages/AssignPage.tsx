@@ -1,16 +1,9 @@
 import { useMemo, useState } from "react"
 import { Checkbox, Chip, FormControl, FormControlLabel, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material"
-import { match } from "ts-pattern"
-import type { BladeSource, Catalog } from "../../types/common"
+import type { Catalog } from "../../types/common"
 import { useI18n } from "../i18n/LanguageContext"
+import { sourceLabelKey } from "../misc/bladeSource"
 import { fuzzyFilterOptions } from "../misc/search"
-
-const sourceLabelKey = (source: BladeSource) =>
-  match(source)
-    .with('FIXED', () => 'ui.sourceFixed')
-    .with('BINDED', () => 'ui.sourceBinded')
-    .with('FREE', () => 'ui.sourceFree')
-    .exhaustive()
 
 export default function AssignPage(props: {
   catalog: Catalog

@@ -3,8 +3,20 @@ export type BladeSource = 'FIXED' | 'BINDED' | 'FREE'
 export type SlotName = string | null
 export type BladeOwners = ReadonlyMap<string, string>
 
+export const DRIVER_REX = 'rex'
 export const DRIVER_NIA = 'nia'
 export const DRIVER_TORA = 'tora'
+export const DRIVER_ORDER = ['rex', 'nia', 'merefu', 'zig', 'tora'] as const
+export type DriverName = typeof DRIVER_ORDER[number]
+
+/** Canonical element order; bit i in elementMask is ELEMENTS[i]. */
+export const ELEMENTS = ['fire', 'water', 'wind', 'ice', 'electricity', 'earth', 'dark', 'light'] as const
+export type ElementName = typeof ELEMENTS[number]
+
+/** Canonical driver-art effect order; effectCounts[i] is EFFECTS[i]. */
+export const EFFECTS = ['break', 'topple', 'launch', 'smash'] as const
+export type EffectName = typeof EFFECTS[number]
+
 /** Wildcard element for Poppiswap blades: solver may use any element. */
 export const ANY_ELEMENT = '-'
 

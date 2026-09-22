@@ -3,9 +3,9 @@ import { Clear } from "@mui/icons-material"
 import { Checkbox, Chip, FormControl, FormControlLabel, IconButton, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import { match, P } from "ts-pattern"
 import type { BladeInfo, BladeOwners, Catalog, ElementChoice, MemberState, SlotName } from "../../types/common"
-import { ANY_ELEMENT, emptyBladeElements } from "../../types/common"
+import { ANY_ELEMENT, DRIVER_NIA } from "../../types/common"
 import { holderOf } from "../../model/availability"
-import { NIA } from "../../model/solver"
+import { memberDefaultsForDriver, prefillFixedBlades } from "../../model/members"
 import {
   advancedNewGameOk,
   allowName,
@@ -54,7 +54,7 @@ export default function MemberColumn(props: MemberColumnProps) {
       return true
     if (props.takenDrivers.has(d.name))
       return false
-    if (d.name === NIA && props.niaBladeTaken)
+    if (d.name === DRIVER_NIA && props.niaBladeTaken)
       return false
     return true
   })
@@ -95,21 +95,14 @@ export default function MemberColumn(props: MemberColumnProps) {
   }, [props.members, props.index])
 
   const setDriver = (driver: string) => {
-    const info = catalog.driverByName.get(driver)
-    const blades: [SlotName, SlotName, SlotName] = [null, null, null]
-    // Prefill unused fixed blades. Tora's Poppi stay locked; other drivers can replace them.
-    info?.fixedBlades.forEach((name, i) => {
-      if (i < 3 && !usedByOthers.has(name))
-        blades[i] = name
-    })
     props.onChange({
       driver,
-      blades,
-      matchRole: catalog.isBindsOnly(driver) ? true : state.matchRole,
-      borrowBound: !!info?.canUseForeign && (canBorrow ? state.borrowBound : true),
-      uniqueWeapon: catalog.isBindsOnly(driver) ? true : state.uniqueWeapon,
-      allowElementChange: false,
-      bladeElements: emptyBladeElements(),
+      blades: prefillFixedBlades(catalog, driver, usedByOthers),
+      ...memberDefaultsForDriver(catalog, driver, {
+        matchRole: state.matchRole,
+        uniqueWeapon: state.uniqueWeapon,
+        borrowBound: canBorrow ? state.borrowBound : true,
+      }),
     })
   }
 

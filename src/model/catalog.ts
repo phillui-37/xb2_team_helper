@@ -1,6 +1,6 @@
 import { match, P } from "ts-pattern"
 import type { BladeInfo, BladeOwners, BladeSource, Catalog, CharacterGift, DriverInfo, PouchBuff, PouchCategory, WeaponInfo } from "../types/common"
-import { DRIVER_TORA } from "../types/common"
+import { DRIVER_TORA, EFFECTS, ELEMENTS } from "../types/common"
 import type {
   BladeRow,
   BindRow,
@@ -12,8 +12,8 @@ import type {
   FavoriteItemRow,
   PouchCategoryRow,
   WeaponRow,
-} from "../types/dbRows"
-import { eligible, manualPick, selectBlades, solverPick } from "./criteria"
+} from "./data/rowSchema"
+import { eligible, selectBlades, solverPick } from "./criteria"
 
 export function buildCatalog(raw: {
   drivers: DriverRow[]
@@ -28,10 +28,10 @@ export function buildCatalog(raw: {
   favoriteCategories: FavoriteCategoryRow[]
   favoriteItems: FavoriteItemRow[]
 }): Catalog {
-  const elements = ['fire', 'water', 'wind', 'ice', 'electricity', 'earth', 'dark', 'light']
-  const effects = ['break', 'topple', 'launch', 'smash']
-  const elementIndex = new Map(elements.map((name, i) => [name, i]))
-  const effectIndex = new Map(effects.map((name, i) => [name, i]))
+  const elements = [...ELEMENTS]
+  const effects = [...EFFECTS]
+  const elementIndex = new Map<string, number>(elements.map((name, i) => [name, i]))
+  const effectIndex = new Map<string, number>(effects.map((name, i) => [name, i]))
 
   const bindsByBlade = new Map<string, { driver: string; isFixed: boolean }[]>()
   for (const row of raw.binds) {
@@ -253,7 +253,7 @@ export function buildCatalog(raw: {
     isForeignBound,
     effectsOf,
     manualCandidatesFor: (driver, owners) =>
-      selectBlades(blades, { catalog, driver, owners }, manualPick),
+      selectBlades(blades, { catalog, driver, owners }, eligible),
     solverCandidatesFor: (driver, owners, matchRole = true) =>
       selectBlades(
         blades,

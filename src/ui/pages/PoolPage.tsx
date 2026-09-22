@@ -1,18 +1,11 @@
 import { useMemo, useState } from "react"
 import { Button, Checkbox, Chip, FormControl, FormControlLabel, InputLabel, MenuItem, Select, TextField, Typography } from "@mui/material"
-import { match } from "ts-pattern"
-import type { BladeSource, Catalog } from "../../types/common"
+import type { Catalog } from "../../types/common"
 import { isPoolableBlade } from "../../model/pool"
-import { PARTY_ROLE_OPTIONS, type PartyRole, type PartyRoles } from "../../model/solver"
+import { PARTY_ROLE_OPTIONS, type PartyRole, type PartyRoles } from "../../model/party"
 import { useI18n } from "../i18n/LanguageContext"
+import { sourceLabelKey } from "../misc/bladeSource"
 import { fuzzyFilterOptions } from "../misc/search"
-
-const sourceLabelKey = (source: BladeSource) =>
-  match(source)
-    .with('FIXED', () => 'ui.sourceFixed')
-    .with('BINDED', () => 'ui.sourceBinded')
-    .with('FREE', () => 'ui.sourceFree')
-    .exhaustive()
 
 export default function PoolPage(props: {
   catalog: Catalog

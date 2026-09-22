@@ -77,3 +77,16 @@ export const ForeignBlockedRowSchema = Schema.Struct({
 /** v4 Record is positional: Record(keySchema, valueSchema). */
 export const OwnersJsonSchema = Schema.Record(Schema.String, Schema.String)
 
+export type DriverRow = typeof DriverRowSchema.Type
+export type BladeRow = typeof BladeRowSchema.Type
+export type BindRow = typeof BindRowSchema.Type
+export type EffectRow = typeof EffectRowSchema.Type
+export type ExcludeRow = typeof ExcludeRowSchema.Type
+export type WeaponRow = typeof WeaponRowSchema.Type
+export type ChainRow = typeof ChainRowSchema.Type
+export type PouchCategoryRow = typeof PouchCategoryRowSchema.Type
+export type FavoriteCategoryRow = typeof FavoriteCategoryRowSchema.Type
+export type FavoriteItemRow = typeof FavoriteItemRowSchema.Type
+export type ForeignBlockedRow = typeof ForeignBlockedRowSchema.Type
+export type OwnersJson = typeof OwnersJsonSchema.Type
+

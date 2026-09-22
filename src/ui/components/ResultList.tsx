@@ -1,7 +1,7 @@
 import { Card, CardContent, Chip, Typography } from "@mui/material"
 import type { Catalog, TeamResult } from "../../types/common"
-import { ANY_ELEMENT } from "../../types/common"
-import { rexFillRole } from "../../model/solver"
+import { ANY_ELEMENT, DRIVER_REX } from "../../types/common"
+import { rexFillRole } from "../../model/party"
 import { useI18n } from "../i18n/LanguageContext"
 
 export default function ResultList(props: {
@@ -23,7 +23,7 @@ export default function ResultList(props: {
           <CardContent className="flex flex-col gap-3">
             <div className="grid gap-3 md:grid-cols-3">
               {team.members.map(member => {
-                const fill = member.driver === 'rex'
+                const fill = member.driver === DRIVER_REX
                   ? rexFillRole(props.catalog, team.members.map(item => item.driver))
                   : null
                 return (
