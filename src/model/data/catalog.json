@@ -1,0 +1,2861 @@
+{
+  "drivers": [
+    {
+      "id": 1,
+      "name": "rex",
+      "role": "Attacker",
+      "can_use_foreign": true
+    },
+    {
+      "id": 2,
+      "name": "nia",
+      "role": "Healer",
+      "can_use_foreign": false
+    },
+    {
+      "id": 3,
+      "name": "merefu",
+      "role": "Tank",
+      "can_use_foreign": false
+    },
+    {
+      "id": 4,
+      "name": "zig",
+      "role": "Attacker",
+      "can_use_foreign": false
+    },
+    {
+      "id": 5,
+      "name": "tora",
+      "role": "Tank",
+      "can_use_foreign": false
+    }
+  ],
+  "blades": [
+    {
+      "id": 1,
+      "name": "elma",
+      "weapon": "elma",
+      "weapon_role": "Attacker",
+      "element1": "dark",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 2,
+      "name": "shulk",
+      "weapon": "shulk",
+      "weapon_role": "Attacker",
+      "element1": "light",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 3,
+      "name": "praxis",
+      "weapon": "lance",
+      "weapon_role": "Attacker",
+      "element1": "water",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 1,
+      "can_change_element": false
+    },
+    {
+      "id": 4,
+      "name": "perun",
+      "weapon": "lance",
+      "weapon_role": "Attacker",
+      "element1": "ice",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 1,
+      "can_change_element": false
+    },
+    {
+      "id": 5,
+      "name": "wulfric",
+      "weapon": "lance",
+      "weapon_role": "Attacker",
+      "element1": "earth",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 6,
+      "name": "vale",
+      "weapon": "lance",
+      "weapon_role": "Attacker",
+      "element1": "dark",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 7,
+      "name": "dagas",
+      "weapon": "axe",
+      "weapon_role": "Attacker",
+      "element1": "fire",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 1,
+      "can_change_element": false
+    },
+    {
+      "id": 8,
+      "name": "gorg",
+      "weapon": "axe",
+      "weapon_role": "Attacker",
+      "element1": "water",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 9,
+      "name": "zanobia",
+      "weapon": "axe",
+      "weapon_role": "Attacker",
+      "element1": "wind",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 10,
+      "name": "agate",
+      "weapon": "axe",
+      "weapon_role": "Attacker",
+      "element1": "earth",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 11,
+      "name": "telos",
+      "weapon": "axe",
+      "weapon_role": "Attacker",
+      "element1": "dark",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 12,
+      "name": "hana jd",
+      "weapon": "hana saber",
+      "weapon_role": "Attacker",
+      "element1": "ice",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 0,
+      "can_change_element": true
+    },
+    {
+      "id": 13,
+      "name": "sheba",
+      "weapon": "cannon",
+      "weapon_role": "Attacker",
+      "element1": "water",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 14,
+      "name": "herald",
+      "weapon": "cannon",
+      "weapon_role": "Attacker",
+      "element1": "electricity",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 15,
+      "name": "azami",
+      "weapon": "cannon",
+      "weapon_role": "Attacker",
+      "element1": "dark",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 16,
+      "name": "kosmos",
+      "weapon": "cannon",
+      "weapon_role": "Attacker",
+      "element1": "light",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 17,
+      "name": "saika",
+      "weapon": "saika",
+      "weapon_role": "Attacker",
+      "element1": "electricity",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 18,
+      "name": "suzaku",
+      "weapon": "suzaku",
+      "weapon_role": "Attacker",
+      "element1": "wind",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 19,
+      "name": "seihai",
+      "weapon": "seihai",
+      "weapon_role": "Attacker",
+      "element1": "fire",
+      "element2": "light",
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 20,
+      "name": "kamuya",
+      "weapon": "uchigatana",
+      "weapon_role": "Tank",
+      "element1": "light",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 21,
+      "name": "kaguduchi",
+      "weapon": "whip",
+      "weapon_role": "Tank",
+      "element1": "fire",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 22,
+      "name": "finch",
+      "weapon": "hammer",
+      "weapon_role": "Tank",
+      "element1": "wind",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 1,
+      "can_change_element": false
+    },
+    {
+      "id": 23,
+      "name": "godfrey",
+      "weapon": "hammer",
+      "weapon_role": "Tank",
+      "element1": "ice",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 24,
+      "name": "electra",
+      "weapon": "hammer",
+      "weapon_role": "Tank",
+      "element1": "electricity",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 1,
+      "can_change_element": false
+    },
+    {
+      "id": 25,
+      "name": "kasandra",
+      "weapon": "hammer",
+      "weapon_role": "Tank",
+      "element1": "dark",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 26,
+      "name": "poppibuster",
+      "weapon": "hammer",
+      "weapon_role": "Tank",
+      "element1": "light",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 27,
+      "name": "hana jk",
+      "weapon": "hana arms",
+      "weapon_role": "Tank",
+      "element1": "fire",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 0,
+      "can_change_element": true
+    },
+    {
+      "id": 28,
+      "name": "hana js",
+      "weapon": "hana shield",
+      "weapon_role": "Tank",
+      "element1": "earth",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 0,
+      "can_change_element": true
+    },
+    {
+      "id": 29,
+      "name": "newt",
+      "weapon": "katana",
+      "weapon_role": "Tank",
+      "element1": "fire",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 30,
+      "name": "wadatumi",
+      "weapon": "katana",
+      "weapon_role": "Tank",
+      "element1": "water",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 31,
+      "name": "theory",
+      "weapon": "katana",
+      "weapon_role": "Tank",
+      "element1": "ice",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 32,
+      "name": "perceval",
+      "weapon": "katana",
+      "weapon_role": "Tank",
+      "element1": "dark",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 1,
+      "can_change_element": false
+    },
+    {
+      "id": 33,
+      "name": "nia",
+      "weapon": "nia",
+      "weapon_role": "Healer",
+      "element1": "water",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 34,
+      "name": "adenine",
+      "weapon": "claws",
+      "weapon_role": "Healer",
+      "element1": "wind",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 35,
+      "name": "ursula",
+      "weapon": "claws",
+      "weapon_role": "Healer",
+      "element1": "ice",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 1,
+      "can_change_element": false
+    },
+    {
+      "id": 36,
+      "name": "kora",
+      "weapon": "claws",
+      "weapon_role": "Healer",
+      "element1": "electricity",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 37,
+      "name": "nim",
+      "weapon": "claws",
+      "weapon_role": "Healer",
+      "element1": "earth",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 38,
+      "name": "pyauko",
+      "weapon": "twin rings",
+      "weapon_role": "Healer",
+      "element1": "water",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 39,
+      "name": "fiora",
+      "weapon": "twin rings",
+      "weapon_role": "Healer",
+      "element1": "wind",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 40,
+      "name": "crossette",
+      "weapon": "ball",
+      "weapon_role": "Healer",
+      "element1": "fire",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 41,
+      "name": "boreas",
+      "weapon": "ball",
+      "weapon_role": "Healer",
+      "element1": "wind",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 1,
+      "can_change_element": false
+    },
+    {
+      "id": 42,
+      "name": "dahlla",
+      "weapon": "ball",
+      "weapon_role": "Healer",
+      "element1": "ice",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 43,
+      "name": "vess",
+      "weapon": "ball",
+      "weapon_role": "Healer",
+      "element1": "electricity",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 44,
+      "name": "floren",
+      "weapon": "ball",
+      "weapon_role": "Healer",
+      "element1": "earth",
+      "element2": null,
+      "advanced_new_game": false,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 45,
+      "name": "momo",
+      "weapon": "ball",
+      "weapon_role": "Healer",
+      "element1": "light",
+      "element2": "dark",
+      "advanced_new_game": false,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 46,
+      "name": "ragou",
+      "weapon": "decimation cannon",
+      "weapon_role": "Attacker",
+      "element1": "fire",
+      "element2": null,
+      "advanced_new_game": true,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 47,
+      "name": "kamui",
+      "weapon": "brilliant twinblades",
+      "weapon_role": "Attacker",
+      "element1": "electricity",
+      "element2": null,
+      "advanced_new_game": true,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 48,
+      "name": "benkei",
+      "weapon": "cobra bardiche",
+      "weapon_role": "Attacker",
+      "element1": "earth",
+      "element2": null,
+      "advanced_new_game": true,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 49,
+      "name": "zantetsu",
+      "weapon": "sword tonfa",
+      "weapon_role": "Tank",
+      "element1": "wind",
+      "element2": null,
+      "advanced_new_game": true,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 50,
+      "name": "ootsuchi",
+      "weapon": "rockrending gauntlets",
+      "weapon_role": "Tank",
+      "element1": "earth",
+      "element2": null,
+      "advanced_new_game": true,
+      "aux_core_slots": 2,
+      "can_change_element": false
+    },
+    {
+      "id": 51,
+      "name": "satahiko",
+      "weapon": "infinity fans",
+      "weapon_role": "Tank",
+      "element1": "dark",
+      "element2": null,
+      "advanced_new_game": true,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    },
+    {
+      "id": 52,
+      "name": "yoshitsune",
+      "weapon": "calamity scythe",
+      "weapon_role": "Healer",
+      "element1": "electricity",
+      "element2": null,
+      "advanced_new_game": true,
+      "aux_core_slots": 3,
+      "can_change_element": false
+    }
+  ],
+  "binds": [
+    {
+      "blade": "nia",
+      "driver": "rex",
+      "is_fixed": false
+    },
+    {
+      "blade": "poppibuster",
+      "driver": "rex",
+      "is_fixed": false
+    },
+    {
+      "blade": "seihai",
+      "driver": "rex",
+      "is_fixed": true
+    },
+    {
+      "blade": "suzaku",
+      "driver": "rex",
+      "is_fixed": false
+    },
+    {
+      "blade": "pyauko",
+      "driver": "nia",
+      "is_fixed": true
+    },
+    {
+      "blade": "poppibuster",
+      "driver": "nia",
+      "is_fixed": false
+    },
+    {
+      "blade": "wadatumi",
+      "driver": "merefu",
+      "is_fixed": false
+    },
+    {
+      "blade": "poppibuster",
+      "driver": "merefu",
+      "is_fixed": false
+    },
+    {
+      "blade": "kaguduchi",
+      "driver": "merefu",
+      "is_fixed": true
+    },
+    {
+      "blade": "poppibuster",
+      "driver": "zig",
+      "is_fixed": false
+    },
+    {
+      "blade": "saika",
+      "driver": "zig",
+      "is_fixed": true
+    },
+    {
+      "blade": "hana js",
+      "driver": "tora",
+      "is_fixed": true
+    },
+    {
+      "blade": "hana jk",
+      "driver": "tora",
+      "is_fixed": true
+    },
+    {
+      "blade": "hana jd",
+      "driver": "tora",
+      "is_fixed": true
+    }
+  ],
+  "effects": [
+    {
+      "driver": "rex",
+      "weapon": "katana",
+      "effect": "break"
+    },
+    {
+      "driver": "rex",
+      "weapon": "uchigatana",
+      "effect": "smash"
+    },
+    {
+      "driver": "rex",
+      "weapon": "seihai",
+      "effect": "topple"
+    },
+    {
+      "driver": "rex",
+      "weapon": "suzaku",
+      "effect": "smash"
+    },
+    {
+      "driver": "rex",
+      "weapon": "axe",
+      "effect": "launch"
+    },
+    {
+      "driver": "rex",
+      "weapon": "lance",
+      "effect": "break"
+    },
+    {
+      "driver": "nia",
+      "weapon": "twin rings",
+      "effect": "break"
+    },
+    {
+      "driver": "nia",
+      "weapon": "claws",
+      "effect": "launch"
+    },
+    {
+      "driver": "nia",
+      "weapon": "uchigatana",
+      "effect": "smash"
+    },
+    {
+      "driver": "nia",
+      "weapon": "cannon",
+      "effect": "break"
+    },
+    {
+      "driver": "nia",
+      "weapon": "axe",
+      "effect": "topple"
+    },
+    {
+      "driver": "nia",
+      "weapon": "elma",
+      "effect": "break"
+    },
+    {
+      "driver": "merefu",
+      "weapon": "claws",
+      "effect": "break"
+    },
+    {
+      "driver": "merefu",
+      "weapon": "katana",
+      "effect": "smash"
+    },
+    {
+      "driver": "merefu",
+      "weapon": "hammer",
+      "effect": "launch"
+    },
+    {
+      "driver": "merefu",
+      "weapon": "whip",
+      "effect": "break"
+    },
+    {
+      "driver": "merefu",
+      "weapon": "uchigatana",
+      "effect": "smash"
+    },
+    {
+      "driver": "merefu",
+      "weapon": "cannon",
+      "effect": "break"
+    },
+    {
+      "driver": "merefu",
+      "weapon": "lance",
+      "effect": "smash"
+    },
+    {
+      "driver": "merefu",
+      "weapon": "shulk",
+      "effect": "topple"
+    },
+    {
+      "driver": "zig",
+      "weapon": "claws",
+      "effect": "topple"
+    },
+    {
+      "driver": "zig",
+      "weapon": "hammer",
+      "effect": "launch"
+    },
+    {
+      "driver": "zig",
+      "weapon": "uchigatana",
+      "effect": "smash"
+    },
+    {
+      "driver": "zig",
+      "weapon": "saika",
+      "effect": "launch"
+    },
+    {
+      "driver": "zig",
+      "weapon": "cannon",
+      "effect": "break"
+    },
+    {
+      "driver": "zig",
+      "weapon": "axe",
+      "effect": "topple"
+    },
+    {
+      "driver": "zig",
+      "weapon": "lance",
+      "effect": "smash"
+    },
+    {
+      "driver": "zig",
+      "weapon": "shulk",
+      "effect": "launch"
+    },
+    {
+      "driver": "tora",
+      "weapon": "hana shield",
+      "effect": "topple"
+    },
+    {
+      "driver": "tora",
+      "weapon": "hana arms",
+      "effect": "smash"
+    },
+    {
+      "driver": "tora",
+      "weapon": "hana saber",
+      "effect": "break"
+    },
+    {
+      "driver": "tora",
+      "weapon": "hana saber",
+      "effect": "launch"
+    },
+    {
+      "driver": "zig",
+      "weapon": "decimation cannon",
+      "effect": "break"
+    },
+    {
+      "driver": "merefu",
+      "weapon": "decimation cannon",
+      "effect": "break"
+    },
+    {
+      "driver": "nia",
+      "weapon": "decimation cannon",
+      "effect": "break"
+    },
+    {
+      "driver": "nia",
+      "weapon": "brilliant twinblades",
+      "effect": "break"
+    },
+    {
+      "driver": "zig",
+      "weapon": "cobra bardiche",
+      "effect": "smash"
+    },
+    {
+      "driver": "merefu",
+      "weapon": "cobra bardiche",
+      "effect": "smash"
+    },
+    {
+      "driver": "rex",
+      "weapon": "cobra bardiche",
+      "effect": "break"
+    },
+    {
+      "driver": "zig",
+      "weapon": "sword tonfa",
+      "effect": "topple"
+    },
+    {
+      "driver": "merefu",
+      "weapon": "sword tonfa",
+      "effect": "break"
+    },
+    {
+      "driver": "nia",
+      "weapon": "sword tonfa",
+      "effect": "launch"
+    },
+    {
+      "driver": "zig",
+      "weapon": "rockrending gauntlets",
+      "effect": "topple"
+    },
+    {
+      "driver": "merefu",
+      "weapon": "rockrending gauntlets",
+      "effect": "break"
+    },
+    {
+      "driver": "nia",
+      "weapon": "rockrending gauntlets",
+      "effect": "launch"
+    },
+    {
+      "driver": "nia",
+      "weapon": "infinity fans",
+      "effect": "break"
+    },
+    {
+      "driver": "zig",
+      "weapon": "calamity scythe",
+      "effect": "topple"
+    },
+    {
+      "driver": "nia",
+      "weapon": "calamity scythe",
+      "effect": "topple"
+    },
+    {
+      "driver": "rex",
+      "weapon": "calamity scythe",
+      "effect": "launch"
+    }
+  ],
+  "excludes": [
+    {
+      "blade": "poppibuster",
+      "driver": "tora"
+    }
+  ],
+  "foreignBlocked": [
+    "hana jd",
+    "hana jk",
+    "hana js"
+  ],
+  "weapons": [
+    {
+      "name": "decimation cannon",
+      "role": "Attacker"
+    },
+    {
+      "name": "brilliant twinblades",
+      "role": "Attacker"
+    },
+    {
+      "name": "cobra bardiche",
+      "role": "Attacker"
+    },
+    {
+      "name": "elma",
+      "role": "Attacker"
+    },
+    {
+      "name": "shulk",
+      "role": "Attacker"
+    },
+    {
+      "name": "lance",
+      "role": "Attacker"
+    },
+    {
+      "name": "axe",
+      "role": "Attacker"
+    },
+    {
+      "name": "hana saber",
+      "role": "Attacker"
+    },
+    {
+      "name": "cannon",
+      "role": "Attacker"
+    },
+    {
+      "name": "saika",
+      "role": "Attacker"
+    },
+    {
+      "name": "suzaku",
+      "role": "Attacker"
+    },
+    {
+      "name": "seihai",
+      "role": "Attacker"
+    },
+    {
+      "name": "sword tonfa",
+      "role": "Tank"
+    },
+    {
+      "name": "rockrending gauntlets",
+      "role": "Tank"
+    },
+    {
+      "name": "infinity fans",
+      "role": "Tank"
+    },
+    {
+      "name": "uchigatana",
+      "role": "Tank"
+    },
+    {
+      "name": "whip",
+      "role": "Tank"
+    },
+    {
+      "name": "hammer",
+      "role": "Tank"
+    },
+    {
+      "name": "hana arms",
+      "role": "Tank"
+    },
+    {
+      "name": "hana shield",
+      "role": "Tank"
+    },
+    {
+      "name": "katana",
+      "role": "Tank"
+    },
+    {
+      "name": "calamity scythe",
+      "role": "Healer"
+    },
+    {
+      "name": "nia",
+      "role": "Healer"
+    },
+    {
+      "name": "claws",
+      "role": "Healer"
+    },
+    {
+      "name": "twin rings",
+      "role": "Healer"
+    },
+    {
+      "name": "ball",
+      "role": "Healer"
+    }
+  ],
+  "elementChains": [
+    {
+      "element1": "light",
+      "element2": "electricity",
+      "element3": "fire"
+    },
+    {
+      "element1": "fire",
+      "element2": "water",
+      "element3": "fire"
+    },
+    {
+      "element1": "fire",
+      "element2": "fire",
+      "element3": "fire"
+    },
+    {
+      "element1": "light",
+      "element2": "light",
+      "element3": "water"
+    },
+    {
+      "element1": "electricity",
+      "element2": "electricity",
+      "element3": "water"
+    },
+    {
+      "element1": "water",
+      "element2": "water",
+      "element3": "water"
+    },
+    {
+      "element1": "water",
+      "element2": "earth",
+      "element3": "wind"
+    },
+    {
+      "element1": "ice",
+      "element2": "water",
+      "element3": "wind"
+    },
+    {
+      "element1": "electricity",
+      "element2": "fire",
+      "element3": "wind"
+    },
+    {
+      "element1": "earth",
+      "element2": "fire",
+      "element3": "wind"
+    },
+    {
+      "element1": "wind",
+      "element2": "ice",
+      "element3": "ice"
+    },
+    {
+      "element1": "fire",
+      "element2": "water",
+      "element3": "ice"
+    },
+    {
+      "element1": "electricity",
+      "element2": "fire",
+      "element3": "ice"
+    },
+    {
+      "element1": "dark",
+      "element2": "light",
+      "element3": "electricity"
+    },
+    {
+      "element1": "earth",
+      "element2": "earth",
+      "element3": "electricity"
+    },
+    {
+      "element1": "wind",
+      "element2": "wind",
+      "element3": "electricity"
+    },
+    {
+      "element1": "dark",
+      "element2": "dark",
+      "element3": "earth"
+    },
+    {
+      "element1": "ice",
+      "element2": "ice",
+      "element3": "earth"
+    },
+    {
+      "element1": "wind",
+      "element2": "wind",
+      "element3": "earth"
+    },
+    {
+      "element1": "earth",
+      "element2": "fire",
+      "element3": "earth"
+    },
+    {
+      "element1": "dark",
+      "element2": "dark",
+      "element3": "dark"
+    },
+    {
+      "element1": "ice",
+      "element2": "ice",
+      "element3": "dark"
+    },
+    {
+      "element1": "water",
+      "element2": "water",
+      "element3": "dark"
+    },
+    {
+      "element1": "light",
+      "element2": "light",
+      "element3": "light"
+    },
+    {
+      "element1": "fire",
+      "element2": "fire",
+      "element3": "light"
+    }
+  ],
+  "pouchCategories": [
+    {
+      "name": "staple_foods",
+      "buff_key": "dmg_barrier"
+    },
+    {
+      "name": "veggies",
+      "buff_key": "hp_restore"
+    },
+    {
+      "name": "meats",
+      "buff_key": "phys_def"
+    },
+    {
+      "name": "seafood",
+      "buff_key": "ether_def"
+    },
+    {
+      "name": "desserts",
+      "buff_key": "arts_recharge"
+    },
+    {
+      "name": "drinks",
+      "buff_key": "party_gauge"
+    },
+    {
+      "name": "instruments",
+      "buff_key": "special_recharge"
+    },
+    {
+      "name": "art",
+      "buff_key": "affinity_gain"
+    },
+    {
+      "name": "literature",
+      "buff_key": "special_damage"
+    },
+    {
+      "name": "board_games",
+      "buff_key": "blade_art"
+    },
+    {
+      "name": "cosmetics",
+      "buff_key": "start_affinity"
+    },
+    {
+      "name": "textiles",
+      "buff_key": "affinity_loss"
+    },
+    {
+      "name": "charms",
+      "buff_key": "party_gauge"
+    }
+  ],
+  "favoriteCategories": [
+    {
+      "owner_type": "blade",
+      "owner_name": "adenine",
+      "persona": "",
+      "category": "veggies",
+      "buff_key": "hp_restore",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "adenine",
+      "persona": "",
+      "category": "literature",
+      "buff_key": "special_damage",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "agate",
+      "persona": "",
+      "category": "drinks",
+      "buff_key": "party_gauge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "agate",
+      "persona": "",
+      "category": "art",
+      "buff_key": "affinity_gain",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "azami",
+      "persona": "",
+      "category": "drinks",
+      "buff_key": "party_gauge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "azami",
+      "persona": "",
+      "category": "literature",
+      "buff_key": "special_damage",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "boreas",
+      "persona": "",
+      "category": "staple_foods",
+      "buff_key": "dmg_barrier",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "boreas",
+      "persona": "",
+      "category": "cosmetics",
+      "buff_key": "start_affinity",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "crossette",
+      "persona": "",
+      "category": "staple_foods",
+      "buff_key": "dmg_barrier",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "crossette",
+      "persona": "",
+      "category": "desserts",
+      "buff_key": "arts_recharge",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "dagas",
+      "persona": "",
+      "category": "seafood",
+      "buff_key": "ether_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "dagas",
+      "persona": "",
+      "category": "art",
+      "buff_key": "affinity_gain",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "dahlla",
+      "persona": "",
+      "category": "veggies",
+      "buff_key": "hp_restore",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "dahlla",
+      "persona": "",
+      "category": "cosmetics",
+      "buff_key": "start_affinity",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "electra",
+      "persona": "",
+      "category": "meats",
+      "buff_key": "phys_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "electra",
+      "persona": "",
+      "category": "instruments",
+      "buff_key": "special_recharge",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "elma",
+      "persona": "",
+      "category": "seafood",
+      "buff_key": "ether_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "elma",
+      "persona": "",
+      "category": "art",
+      "buff_key": "affinity_gain",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "finch",
+      "persona": "",
+      "category": "veggies",
+      "buff_key": "hp_restore",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "finch",
+      "persona": "",
+      "category": "cosmetics",
+      "buff_key": "start_affinity",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "fiora",
+      "persona": "",
+      "category": "seafood",
+      "buff_key": "ether_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "fiora",
+      "persona": "",
+      "category": "cosmetics",
+      "buff_key": "start_affinity",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "floren",
+      "persona": "",
+      "category": "veggies",
+      "buff_key": "hp_restore",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "floren",
+      "persona": "",
+      "category": "art",
+      "buff_key": "affinity_gain",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "godfrey",
+      "persona": "",
+      "category": "meats",
+      "buff_key": "phys_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "godfrey",
+      "persona": "",
+      "category": "instruments",
+      "buff_key": "special_recharge",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "gorg",
+      "persona": "",
+      "category": "desserts",
+      "buff_key": "arts_recharge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "gorg",
+      "persona": "",
+      "category": "textiles",
+      "buff_key": "affinity_loss",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "hana jd",
+      "persona": "",
+      "category": "staple_foods",
+      "buff_key": "dmg_barrier",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "hana jd",
+      "persona": "",
+      "category": "textiles",
+      "buff_key": "affinity_loss",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "hana jk",
+      "persona": "",
+      "category": "veggies",
+      "buff_key": "hp_restore",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "hana jk",
+      "persona": "",
+      "category": "art",
+      "buff_key": "affinity_gain",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "hana js",
+      "persona": "",
+      "category": "staple_foods",
+      "buff_key": "dmg_barrier",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "hana js",
+      "persona": "",
+      "category": "instruments",
+      "buff_key": "special_recharge",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "herald",
+      "persona": "",
+      "category": "drinks",
+      "buff_key": "party_gauge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "herald",
+      "persona": "",
+      "category": "board_games",
+      "buff_key": "blade_art",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kaguduchi",
+      "persona": "",
+      "category": "desserts",
+      "buff_key": "arts_recharge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kaguduchi",
+      "persona": "",
+      "category": "cosmetics",
+      "buff_key": "start_affinity",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kamuya",
+      "persona": "",
+      "category": "drinks",
+      "buff_key": "party_gauge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kamuya",
+      "persona": "",
+      "category": "board_games",
+      "buff_key": "blade_art",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kasandra",
+      "persona": "",
+      "category": "staple_foods",
+      "buff_key": "dmg_barrier",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kasandra",
+      "persona": "",
+      "category": "cosmetics",
+      "buff_key": "start_affinity",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kora",
+      "persona": "",
+      "category": "drinks",
+      "buff_key": "party_gauge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kora",
+      "persona": "",
+      "category": "cosmetics",
+      "buff_key": "start_affinity",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kosmos",
+      "persona": "",
+      "category": "staple_foods",
+      "buff_key": "dmg_barrier",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kosmos",
+      "persona": "",
+      "category": "board_games",
+      "buff_key": "blade_art",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "momo",
+      "persona": "",
+      "category": "desserts",
+      "buff_key": "arts_recharge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "momo",
+      "persona": "",
+      "category": "charms",
+      "buff_key": "party_gauge",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "newt",
+      "persona": "",
+      "category": "meats",
+      "buff_key": "phys_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "newt",
+      "persona": "",
+      "category": "instruments",
+      "buff_key": "special_recharge",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "nia",
+      "persona": "",
+      "category": "seafood",
+      "buff_key": "ether_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "nia",
+      "persona": "",
+      "category": "instruments",
+      "buff_key": "special_recharge",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "nim",
+      "persona": "",
+      "category": "seafood",
+      "buff_key": "ether_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "nim",
+      "persona": "",
+      "category": "instruments",
+      "buff_key": "special_recharge",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "perceval",
+      "persona": "",
+      "category": "drinks",
+      "buff_key": "party_gauge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "perceval",
+      "persona": "",
+      "category": "art",
+      "buff_key": "affinity_gain",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "perun",
+      "persona": "",
+      "category": "seafood",
+      "buff_key": "ether_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "perun",
+      "persona": "",
+      "category": "textiles",
+      "buff_key": "affinity_loss",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "poppibuster",
+      "persona": "",
+      "category": "meats",
+      "buff_key": "phys_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "poppibuster",
+      "persona": "",
+      "category": "board_games",
+      "buff_key": "blade_art",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "praxis",
+      "persona": "",
+      "category": "desserts",
+      "buff_key": "arts_recharge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "praxis",
+      "persona": "",
+      "category": "literature",
+      "buff_key": "special_damage",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "pyauko",
+      "persona": "",
+      "category": "meats",
+      "buff_key": "phys_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "pyauko",
+      "persona": "",
+      "category": "board_games",
+      "buff_key": "blade_art",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "saika",
+      "persona": "",
+      "category": "meats",
+      "buff_key": "phys_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "saika",
+      "persona": "",
+      "category": "literature",
+      "buff_key": "special_damage",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "seihai",
+      "persona": "mythra",
+      "category": "desserts",
+      "buff_key": "arts_recharge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "seihai",
+      "persona": "mythra",
+      "category": "art",
+      "buff_key": "affinity_gain",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "seihai",
+      "persona": "pyra",
+      "category": "veggies",
+      "buff_key": "hp_restore",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "seihai",
+      "persona": "pyra",
+      "category": "literature",
+      "buff_key": "special_damage",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "sheba",
+      "persona": "",
+      "category": "desserts",
+      "buff_key": "arts_recharge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "sheba",
+      "persona": "",
+      "category": "textiles",
+      "buff_key": "affinity_loss",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "shulk",
+      "persona": "",
+      "category": "veggies",
+      "buff_key": "hp_restore",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "shulk",
+      "persona": "",
+      "category": "literature",
+      "buff_key": "special_damage",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "suzaku",
+      "persona": "",
+      "category": "seafood",
+      "buff_key": "ether_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "suzaku",
+      "persona": "",
+      "category": "board_games",
+      "buff_key": "blade_art",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "telos",
+      "persona": "",
+      "category": "instruments",
+      "buff_key": "special_recharge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "telos",
+      "persona": "",
+      "category": "literature",
+      "buff_key": "special_damage",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "theory",
+      "persona": "",
+      "category": "veggies",
+      "buff_key": "hp_restore",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "theory",
+      "persona": "",
+      "category": "board_games",
+      "buff_key": "blade_art",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "ursula",
+      "persona": "",
+      "category": "desserts",
+      "buff_key": "arts_recharge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "ursula",
+      "persona": "",
+      "category": "cosmetics",
+      "buff_key": "start_affinity",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "vale",
+      "persona": "",
+      "category": "desserts",
+      "buff_key": "arts_recharge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "vale",
+      "persona": "",
+      "category": "textiles",
+      "buff_key": "affinity_loss",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "vess",
+      "persona": "",
+      "category": "seafood",
+      "buff_key": "ether_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "vess",
+      "persona": "",
+      "category": "cosmetics",
+      "buff_key": "start_affinity",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "wadatumi",
+      "persona": "",
+      "category": "desserts",
+      "buff_key": "arts_recharge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "wadatumi",
+      "persona": "",
+      "category": "art",
+      "buff_key": "affinity_gain",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "wulfric",
+      "persona": "",
+      "category": "staple_foods",
+      "buff_key": "dmg_barrier",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "wulfric",
+      "persona": "",
+      "category": "literature",
+      "buff_key": "special_damage",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "zanobia",
+      "persona": "",
+      "category": "meats",
+      "buff_key": "phys_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "zanobia",
+      "persona": "",
+      "category": "literature",
+      "buff_key": "special_damage",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "merefu",
+      "persona": "",
+      "category": "veggies",
+      "buff_key": "hp_restore",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "merefu",
+      "persona": "",
+      "category": "art",
+      "buff_key": "affinity_gain",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "nia",
+      "persona": "",
+      "category": "seafood",
+      "buff_key": "ether_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "nia",
+      "persona": "",
+      "category": "textiles",
+      "buff_key": "affinity_loss",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "rex",
+      "persona": "",
+      "category": "drinks",
+      "buff_key": "party_gauge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "rex",
+      "persona": "",
+      "category": "art",
+      "buff_key": "affinity_gain",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "tora",
+      "persona": "",
+      "category": "drinks",
+      "buff_key": "party_gauge",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "tora",
+      "persona": "",
+      "category": "instruments",
+      "buff_key": "special_recharge",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "zig",
+      "persona": "",
+      "category": "meats",
+      "buff_key": "phys_def",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "zig",
+      "persona": "",
+      "category": "textiles",
+      "buff_key": "affinity_loss",
+      "sort_order": 1
+    }
+  ],
+  "favoriteItems": [
+    {
+      "owner_type": "blade",
+      "owner_name": "adenine",
+      "persona": "",
+      "item": "torigoth_marinade",
+      "category": "veggies",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "adenine",
+      "persona": "",
+      "item": "leftherian_life",
+      "category": "board_games",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "agate",
+      "persona": "",
+      "item": "fish_and_herb_broth",
+      "category": "seafood",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "agate",
+      "persona": "",
+      "item": "les_awfuls",
+      "category": "literature",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "azami",
+      "persona": "",
+      "item": "steamflake_tabbouleh",
+      "category": "veggies",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "azami",
+      "persona": "",
+      "item": "red_opal_lipstick",
+      "category": "cosmetics",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "boreas",
+      "persona": "",
+      "item": "massive_mushroom_pie",
+      "category": "staple_foods",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "boreas",
+      "persona": "",
+      "item": "frozen_odifa",
+      "category": "drinks",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "crossette",
+      "persona": "",
+      "item": "sunshine_pie",
+      "category": "meats",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "crossette",
+      "persona": "",
+      "item": "spicy_stralu",
+      "category": "meats",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "dagas",
+      "persona": "",
+      "item": "aromalocaris_saute",
+      "category": "seafood",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "dagas",
+      "persona": "",
+      "item": "black_flower_field",
+      "category": "art",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "dahlla",
+      "persona": "",
+      "item": "poached_fruit_samod",
+      "category": "staple_foods",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "dahlla",
+      "persona": "",
+      "item": "tantal_icecube",
+      "category": "art",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "electra",
+      "persona": "",
+      "item": "honey_au_lait",
+      "category": "drinks",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "electra",
+      "persona": "",
+      "item": "hammerplate_snare",
+      "category": "instruments",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "elma",
+      "persona": "",
+      "item": "codweave_safety_blanky",
+      "category": "textiles",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "elma",
+      "persona": "",
+      "item": "pipestraw_smoothie",
+      "category": "drinks",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "finch",
+      "persona": "",
+      "item": "stuffed_meaty_carrot",
+      "category": "veggies",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "finch",
+      "persona": "",
+      "item": "sparkly_snow_perfume",
+      "category": "cosmetics",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "fiora",
+      "persona": "",
+      "item": "whitebait_samod_hotpot",
+      "category": "seafood",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "fiora",
+      "persona": "",
+      "item": "elastifying_tonic",
+      "category": "cosmetics",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "floren",
+      "persona": "",
+      "item": "leaf_weave_cape",
+      "category": "textiles",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "floren",
+      "persona": "",
+      "item": "snow_dumplings",
+      "category": "desserts",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "godfrey",
+      "persona": "",
+      "item": "estral_steak",
+      "category": "meats",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "godfrey",
+      "persona": "",
+      "item": "adventures_of_myram",
+      "category": "literature",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "gorg",
+      "persona": "",
+      "item": "neon_grape_flan",
+      "category": "desserts",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "gorg",
+      "persona": "",
+      "item": "imperial_secret_escapes",
+      "category": "literature",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "hana jd",
+      "persona": "",
+      "item": "melodious_melon_parfait",
+      "category": "desserts",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "hana jd",
+      "persona": "",
+      "item": "flurrycomb",
+      "category": "cosmetics",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "hana jk",
+      "persona": "",
+      "item": "sky_jewel_tart",
+      "category": "desserts",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "hana jk",
+      "persona": "",
+      "item": "genbu_weave_cloth",
+      "category": "textiles",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "hana js",
+      "persona": "",
+      "item": "fizz_juice",
+      "category": "drinks",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "hana js",
+      "persona": "",
+      "item": "roly_poly_maracas",
+      "category": "instruments",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "herald",
+      "persona": "",
+      "item": "lunana_smoothie",
+      "category": "drinks",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "herald",
+      "persona": "",
+      "item": "jeweled_billiard_balls",
+      "category": "board_games",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kaguduchi",
+      "persona": "",
+      "item": "thawing_mille_feuille",
+      "category": "desserts",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kaguduchi",
+      "persona": "",
+      "item": "titan_oil_hand_cream",
+      "category": "cosmetics",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kamuya",
+      "persona": "",
+      "item": "twinklejuice",
+      "category": "drinks",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kamuya",
+      "persona": "",
+      "item": "nopon_chess_set",
+      "category": "board_games",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kasandra",
+      "persona": "",
+      "item": "felmeri_fairy_statue",
+      "category": "art",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kasandra",
+      "persona": "",
+      "item": "astrology_made_simple",
+      "category": "literature",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kora",
+      "persona": "",
+      "item": "blossom_custard",
+      "category": "desserts",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kora",
+      "persona": "",
+      "item": "conch_hairpin",
+      "category": "cosmetics",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kosmos",
+      "persona": "",
+      "item": "gladiator_wrestling",
+      "category": "board_games",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "kosmos",
+      "persona": "",
+      "item": "masters_curry",
+      "category": "staple_foods",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "momo",
+      "persona": "",
+      "item": "masters_curry",
+      "category": "staple_foods",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "momo",
+      "persona": "",
+      "item": "sparkling_snowglobe",
+      "category": "art",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "newt",
+      "persona": "",
+      "item": "army_field_manual",
+      "category": "board_games",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "newt",
+      "persona": "",
+      "item": "zaproast_power_bowl",
+      "category": "meats",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "nia",
+      "persona": "",
+      "item": "snowbaby_potato_salad",
+      "category": "veggies",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "nia",
+      "persona": "",
+      "item": "sneak_thief_king",
+      "category": "board_games",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "nim",
+      "persona": "",
+      "item": "tricolor_bowl",
+      "category": "staple_foods",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "nim",
+      "persona": "",
+      "item": "dont_feed_the_armu",
+      "category": "board_games",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "perceval",
+      "persona": "",
+      "item": "vinaigrette_ice_cabbage",
+      "category": "veggies",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "perceval",
+      "persona": "",
+      "item": "scarlet_shamisen",
+      "category": "instruments",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "perun",
+      "persona": "",
+      "item": "black_roast_coffee",
+      "category": "drinks",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "perun",
+      "persona": "",
+      "item": "fonsan_viola",
+      "category": "instruments",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "poppibuster",
+      "persona": "",
+      "item": "tasty_sausage",
+      "category": "meats",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "poppibuster",
+      "persona": "",
+      "item": "nopopo_yard",
+      "category": "board_games",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "praxis",
+      "persona": "",
+      "item": "sno_bake_cheesecake",
+      "category": "desserts",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "praxis",
+      "persona": "",
+      "item": "curled_eyelashes",
+      "category": "cosmetics",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "pyauko",
+      "persona": "",
+      "item": "dried_sunfish",
+      "category": "seafood",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "pyauko",
+      "persona": "",
+      "item": "cedarwood_koto",
+      "category": "instruments",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "saika",
+      "persona": "",
+      "item": "fried_octomayo",
+      "category": "staple_foods",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "saika",
+      "persona": "",
+      "item": "moonstar_lipstick",
+      "category": "cosmetics",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "seihai",
+      "persona": "mythra",
+      "item": "cloud_sea_crab_sticks",
+      "category": "seafood",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "seihai",
+      "persona": "mythra",
+      "item": "final_chorus",
+      "category": "art",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "seihai",
+      "persona": "pyra",
+      "item": "jenerossi_tea",
+      "category": "drinks",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "seihai",
+      "persona": "pyra",
+      "item": "woodgrain_alphorn",
+      "category": "instruments",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "sheba",
+      "persona": "",
+      "item": "indoline_tea",
+      "category": "drinks",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "sheba",
+      "persona": "",
+      "item": "copper_ephem_statue",
+      "category": "art",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "shulk",
+      "persona": "",
+      "item": "addams_supercakes",
+      "category": "veggies",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "shulk",
+      "persona": "",
+      "item": "ardainian_arms_album",
+      "category": "literature",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "suzaku",
+      "persona": "",
+      "item": "wood_dye_waistcloth",
+      "category": "textiles",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "suzaku",
+      "persona": "",
+      "item": "abyssturgeon_medallion",
+      "category": "seafood",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "telos",
+      "persona": "",
+      "item": "army_issue_violin",
+      "category": "instruments",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "telos",
+      "persona": "",
+      "item": "salvaging_made_easy",
+      "category": "literature",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "theory",
+      "persona": "",
+      "item": "steamed_veg_stralu",
+      "category": "veggies",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "theory",
+      "persona": "",
+      "item": "sparkly_snow_perfume",
+      "category": "cosmetics",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "ursula",
+      "persona": "",
+      "item": "torigonda",
+      "category": "instruments",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "ursula",
+      "persona": "",
+      "item": "steamwork_organ",
+      "category": "instruments",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "vale",
+      "persona": "",
+      "item": "prickly_snowpickle",
+      "category": "veggies",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "vale",
+      "persona": "",
+      "item": "crinkly_wool",
+      "category": "textiles",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "vess",
+      "persona": "",
+      "item": "fruity_rice_ball",
+      "category": "desserts",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "vess",
+      "persona": "",
+      "item": "torigoth_snowpouch",
+      "category": "textiles",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "wadatumi",
+      "persona": "",
+      "item": "fondant_rice_cake",
+      "category": "staple_foods",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "wadatumi",
+      "persona": "",
+      "item": "montecoran_doll",
+      "category": "art",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "wulfric",
+      "persona": "",
+      "item": "marine_stir_fry",
+      "category": "seafood",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "wulfric",
+      "persona": "",
+      "item": "smack_a_nopon",
+      "category": "board_games",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "zanobia",
+      "persona": "",
+      "item": "char_grilled_grumbird",
+      "category": "meats",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "blade",
+      "owner_name": "zanobia",
+      "persona": "",
+      "item": "portrait_of_ger",
+      "category": "art",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "merefu",
+      "persona": "",
+      "item": "quoteletta",
+      "category": "meats",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "merefu",
+      "persona": "",
+      "item": "steamwork_organ",
+      "category": "instruments",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "nia",
+      "persona": "",
+      "item": "cream_orange_paratha",
+      "category": "staple_foods",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "nia",
+      "persona": "",
+      "item": "ardainian_bear_carving",
+      "category": "art",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "rex",
+      "persona": "",
+      "item": "pan_fried_tartari",
+      "category": "meats",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "rex",
+      "persona": "",
+      "item": "coral_reversi",
+      "category": "board_games",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "tora",
+      "persona": "",
+      "item": "juicy_samod",
+      "category": "staple_foods",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "tora",
+      "persona": "",
+      "item": "silken_stool",
+      "category": "textiles",
+      "sort_order": 1
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "zig",
+      "persona": "",
+      "item": "addams_embercakes",
+      "category": "veggies",
+      "sort_order": 0
+    },
+    {
+      "owner_type": "driver",
+      "owner_name": "zig",
+      "persona": "",
+      "item": "snow_crystal_vase",
+      "category": "art",
+      "sort_order": 1
+    }
+  ]
+}

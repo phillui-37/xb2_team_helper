@@ -1,8 +1,8 @@
-import type { BladeInfo, BladeOwners, Catalog, ElementChoice, MemberState, SlotName, TeamMember, TeamResult } from "../types/common"
-
-export const RESULT_CAP = 100
-export const NIA = 'nia'
-const ANY_ELEMENT = '-'
+import type { BladeInfo, BladeOwners, Catalog, ElementChoice, MemberState, TeamMember, TeamResult } from "../types/common"
+import { ANY_ELEMENT, DRIVER_NIA } from "../types/common"
+import { combinations, subsets } from "./combinatorics"
+import { hasNiaDriver } from "./members"
+import { RESULT_CAP, compareTeamResults, createTeamCollector, teamAuxCoreSlots, teamPoolHits } from "./results"
 
 function elementContribution(
   catalog: Catalog,
@@ -83,37 +83,6 @@ type Stealable = {
   blade: string
 }
 
-function combinations<T>(items: T[], k: number): T[][] {
-  if (k === 0)
-    return [[]]
-  if (k > items.length)
-    return []
-  const out: T[][] = []
-  const rec = (start: number, acc: T[]) => {
-    if (acc.length === k) {
-      out.push(acc.slice())
-      return
-    }
-    for (let i = start; i < items.length; i++) {
-      acc.push(items[i] as T)
-      rec(i + 1, acc)
-      acc.pop()
-    }
-  }
-  rec(0, [])
-  return out
-}
-
-function subsets<T>(items: T[]): T[][] {
-  const out: T[][] = [[]]
-  for (const item of items) {
-    const n = out.length
-    for (let i = 0; i < n; i++)
-      out.push([...out[i]!, item])
-  }
-  return out
-}
-
 function addEffects(
   base: [number, number, number, number],
   extra: [number, number, number, number],
@@ -125,10 +94,8 @@ function effectDelta(catalog: Catalog, driver: string, blade: string): [number, 
   const counts: [number, number, number, number] = [0, 0, 0, 0]
   for (const eff of catalog.effectsOf(driver, blade)) {
     const idx = catalog.effectIndex.get(eff)
-    if (idx === 0) counts[0] += 1
-    else if (idx === 1) counts[1] += 1
-    else if (idx === 2) counts[2] += 1
-    else if (idx === 3) counts[3] += 1
+    if (idx === 0 || idx === 1 || idx === 2 || idx === 3)
+      counts[idx] += 1
   }
   return counts
 }
@@ -141,32 +108,6 @@ function popcount(mask: number): number {
     c++
   }
   return c
-}
-
-export function teamAuxCoreSlots(catalog: Catalog, members: TeamMember[]): number {
-  let total = 0
-  for (const member of members) {
-    for (const name of member.blades) {
-      total += catalog.bladeByName.get(name)?.auxCoreSlots ?? 0
-    }
-  }
-  return total
-}
-
-export function teamPoolHits(members: readonly TeamMember[], pool: ReadonlySet<string>): number {
-  let hits = 0
-  for (const member of members) {
-    for (const name of member.blades) {
-      if (pool.has(name))
-        hits += 1
-    }
-  }
-  return hits
-}
-
-/** Driver + slot identity for a completed team. */
-export function teamMemoKey(members: TeamMember[]): string {
-  return members.map(m => `${m.driver}:${m.blades.join(",")}`).join("|")
 }
 
 function cloneWorks(works: DriverWork[]): DriverWork[] {
@@ -297,25 +238,6 @@ function collectStealable(
   return { borrower: borrower.driver, blades }
 }
 
-export function usedBladeSet(members: MemberState[]): Set<string> {
-  const used = new Set<string>()
-  for (const member of members) {
-    for (const blade of member.blades) {
-      if (blade)
-        used.add(blade)
-    }
-  }
-  return used
-}
-
-export function hasNiaDriver(members: MemberState[]): boolean {
-  return members.some(m => m.driver === NIA)
-}
-
-export function hasNiaBlade(members: MemberState[]): boolean {
-  return members.some(m => m.blades.includes(NIA))
-}
-
 export function solve(
   catalog: Catalog,
   members: MemberState[],
@@ -420,7 +342,7 @@ export function solve(
       const available = catalog.solverCandidatesFor(work.driver, owners, work.matchRole).filter(b => {
         if ((usedMask & (1n << BigInt(b.index))) !== 0n)
           return false
-        if (niaDriverPicked && b.name === NIA)
+        if (niaDriverPicked && b.name === DRIVER_NIA)
           return false
         if (catalog.isForeignBound(work.driver, b.name)) {
           if (!work.borrowBound)
@@ -501,17 +423,7 @@ export function solve(
   // instead of pushing them again.
   const quota = Math.max(1, Math.floor(RESULT_CAP / Math.max(1, prepared.length)))
   const buckets = prepared.map(planned => collectPlan(planned, quota))
-  const results: TeamResult[] = []
-  const seen = new Set<string>()
-  const take = (team: TeamResult) => {
-    if (results.length >= RESULT_CAP)
-      return
-    const key = teamMemoKey(team.members)
-    if (seen.has(key))
-      return
-    seen.add(key)
-    results.push(team)
-  }
+  const { results, take } = createTeamCollector()
   for (const bucket of buckets)
     for (const team of bucket)
       take(team)
@@ -527,248 +439,6 @@ export function solve(
         take(team)
     }
   }
-  results.sort((a, b) => {
-    if (b.poolHits !== a.poolHits)
-      return b.poolHits - a.poolHits
-    return b.auxCoreSlots - a.auxCoreSlots
-  })
+  results.sort(compareTeamResults)
   return results
 }
-
-export const CORE_DRIVERS = ['rex', 'nia', 'merefu', 'zig'] as const
-const TORA = 'tora'
-const DRIVER_ORDER = ['rex', 'nia', 'merefu', 'zig', 'tora'] as const
-export const PARTY_ROLE_OPTIONS = ['Attacker', 'Tank', 'Healer'] as const
-export type PartyRole = typeof PARTY_ROLE_OPTIONS[number]
-export type PartyRoles = [PartyRole, PartyRole, PartyRole]
-export const DEFAULT_PARTY_ROLES: PartyRoles = ['Attacker', 'Tank', 'Healer']
-
-export type PoolSolveOptions = {
-  pool: ReadonlySet<string>
-  allowTora: boolean
-  redundancy: boolean
-  advancedNewGame: boolean
-  matchRole: boolean
-  uniqueWeapon: boolean
-  borrowBound: boolean
-  roles?: PartyRoles
-}
-
-const roleMultiset = (roles: readonly string[]): string =>
-  [...roles].slice().sort().join('|')
-
-const consumeRole = (needed: Map<string, number>, role: string): boolean => {
-  const n = needed.get(role) ?? 0
-  if (n <= 0)
-    return false
-  needed.set(role, n - 1)
-  return true
-}
-
-const leftoverRoles = (needed: Map<string, number>): string[] => {
-  const leftover: string[] = []
-  for (const [role, count] of needed) {
-    for (let i = 0; i < count; i++)
-      leftover.push(role)
-  }
-  return leftover
-}
-
-/** Rex may stand in as Tank or Healer only to fill a role the other two drivers do not already cover. */
-export const rexFillRole = (
-  catalog: Catalog,
-  drivers: readonly string[],
-): PartyRole | null => {
-  if (!drivers.includes('rex'))
-    return null
-  const otherRoles = new Set(
-    drivers
-      .filter(driver => driver !== 'rex')
-      .map(driver => catalog.driverByName.get(driver)?.role)
-      .filter((role): role is string => !!role),
-  )
-  if (!otherRoles.has('Tank') && otherRoles.has('Healer'))
-    return 'Tank'
-  if (!otherRoles.has('Healer') && otherRoles.has('Tank'))
-    return 'Healer'
-  return null
-}
-
-export const tripleMatchesRoles = (
-  catalog: Catalog,
-  triple: readonly string[],
-  roles: PartyRoles,
-): boolean => {
-  const needed = new Map<string, number>()
-  for (const role of roles)
-    needed.set(role, (needed.get(role) ?? 0) + 1)
-
-  const others = triple.filter(driver => driver !== 'rex')
-  const hasRex = others.length !== triple.length
-  for (const driver of others) {
-    const role = catalog.driverByName.get(driver)?.role ?? ''
-    if (!consumeRole(needed, role))
-      return false
-  }
-
-  const leftover = leftoverRoles(needed)
-  if (!hasRex)
-    return leftover.length === 0
-  if (leftover.length !== 1)
-    return false
-  const fill = leftover[0]
-  if (fill === 'Attacker')
-    return true
-  if (fill !== 'Tank' && fill !== 'Healer')
-    return false
-  return rexFillRole(catalog, triple) === fill
-}
-
-export const driverTriples = (
-  allowTora: boolean,
-  availableDrivers?: ReadonlySet<string>,
-  roleFilter?: { catalog: Catalog; roles: PartyRoles },
-): string[][] => {
-  const allowed = (name: string) => !availableDrivers || availableDrivers.has(name)
-  const core: string[] = CORE_DRIVERS.filter(allowed)
-  const triples: string[][] = combinations(core, 3)
-  if (allowTora && allowed(TORA)) {
-    for (const pair of combinations(core, 2))
-      triples.push([...pair, TORA])
-  }
-  const sorted = triples.map(triple =>
-    triple.slice().sort((a, b) => DRIVER_ORDER.indexOf(a as typeof DRIVER_ORDER[number])
-      - DRIVER_ORDER.indexOf(b as typeof DRIVER_ORDER[number])),
-  )
-  if (!roleFilter)
-    return sorted
-  return sorted.filter(triple => tripleMatchesRoles(roleFilter.catalog, triple, roleFilter.roles))
-}
-
-const memberForDriver = (
-  catalog: Catalog,
-  driver: string,
-  options: Pick<PoolSolveOptions, 'matchRole' | 'uniqueWeapon' | 'borrowBound'>,
-): MemberState => {
-  const info = catalog.driverByName.get(driver)
-  const blades: [SlotName, SlotName, SlotName] = [null, null, null]
-  info?.fixedBlades.forEach((name, i) => {
-    if (i < 3)
-      blades[i] = name
-  })
-  if (driver === TORA) {
-    return {
-      driver,
-      blades,
-      matchRole: true,
-      borrowBound: false,
-      uniqueWeapon: true,
-      allowElementChange: true,
-      bladeElements: [ANY_ELEMENT, ANY_ELEMENT, ANY_ELEMENT],
-    }
-  }
-  return {
-    driver,
-    blades,
-    matchRole: options.matchRole,
-    borrowBound: !!info?.canUseForeign && options.borrowBound,
-    uniqueWeapon: options.uniqueWeapon,
-    allowElementChange: false,
-    bladeElements: [null, null, null],
-  }
-}
-
-/** Bound pool blades go to a dedicated driver in the party. Rex only receives them when the owner is absent. */
-const assignBoundPoolBlades = (
-  catalog: Catalog,
-  members: MemberState[],
-  pool: ReadonlySet<string>,
-): MemberState[] => {
-  const triple = members.map(member => member.driver).filter((name): name is string => !!name)
-  const claimed = new Set<string>()
-  for (const member of members) {
-    for (const blade of member.blades) {
-      if (blade)
-        claimed.add(blade)
-    }
-  }
-  for (const name of pool) {
-    if (claimed.has(name))
-      continue
-    if (catalog.bladeSource(name) !== 'BINDED')
-      continue
-    if (name === NIA && triple.includes(NIA))
-      continue
-    const dedicated = catalog.dedicatedDrivers(name).filter(driver => triple.includes(driver))
-    if (dedicated.length === 0)
-      continue
-    const target = DRIVER_ORDER.find(driver =>
-      dedicated.includes(driver) && !catalog.driverByName.get(driver)?.canUseForeign)
-      ?? DRIVER_ORDER.find(driver => dedicated.includes(driver))
-    if (!target || catalog.isBindsOnly(target))
-      continue
-    const member = members.find(item => item.driver === target)
-    if (!member)
-      continue
-    const empty = member.blades.findIndex(blade => !blade)
-    if (empty < 0)
-      continue
-    member.blades[empty] = name
-    claimed.add(name)
-  }
-  return members
-}
-
-const comparePoolTeams = (a: TeamResult, b: TeamResult): number => {
-  if (b.poolHits !== a.poolHits)
-    return b.poolHits - a.poolHits
-  return b.auxCoreSlots - a.auxCoreSlots
-}
-
-export function solveFromPool(
-  catalog: Catalog,
-  options: PoolSolveOptions,
-): TeamResult[] {
-  const roles = options.roles ?? DEFAULT_PARTY_ROLES
-  const availableDrivers = new Set(catalog.drivers.map(d => d.name))
-  const triples = driverTriples(options.allowTora, availableDrivers, { catalog, roles })
-  const prepared = triples.map(triple =>
-    assignBoundPoolBlades(
-      catalog,
-      triple.map(driver => memberForDriver(catalog, driver, options)),
-      options.pool,
-    ),
-  )
-  const quota = Math.max(1, Math.floor(RESULT_CAP / Math.max(1, prepared.length)))
-  const buckets = prepared.map(members =>
-    solve(catalog, members, options.redundancy, new Map(), options.advancedNewGame, options.pool),
-  )
-  const results: TeamResult[] = []
-  const seen = new Set<string>()
-  const take = (team: TeamResult) => {
-    if (results.length >= RESULT_CAP)
-      return
-    const key = teamMemoKey(team.members)
-    if (seen.has(key))
-      return
-    seen.add(key)
-    results.push(team)
-  }
-  for (const bucket of buckets)
-    for (const team of bucket.slice(0, quota))
-      take(team)
-  if (results.length < RESULT_CAP) {
-    for (let i = 0; i < prepared.length; i++) {
-      if (results.length >= RESULT_CAP)
-        break
-      const already = Math.min(quota, buckets[i]!.length)
-      if (buckets[i]!.length < quota)
-        continue
-      for (const team of buckets[i]!.slice(already))
-        take(team)
-    }
-  }
-  results.sort(comparePoolTeams)
-  return results
-}
-

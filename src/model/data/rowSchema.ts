@@ -1,5 +1,7 @@
 import { Schema } from "effect"
 
+/** SQL row shapes for `pnpm catalog`. Client code only type-imports `RawCatalog`. */
+
 export const DriverRowSchema = Schema.Struct({
   id: Schema.Number,
   name: Schema.String,
@@ -74,6 +76,31 @@ export const ForeignBlockedRowSchema = Schema.Struct({
   blade: Schema.String,
 })
 
-/** v4 Record is positional: Record(keySchema, valueSchema). */
-export const OwnersJsonSchema = Schema.Record(Schema.String, Schema.String)
+export type DriverRow = typeof DriverRowSchema.Type
+export type BladeRow = typeof BladeRowSchema.Type
+export type BindRow = typeof BindRowSchema.Type
+export type EffectRow = typeof EffectRowSchema.Type
+export type ExcludeRow = typeof ExcludeRowSchema.Type
+export type WeaponRow = typeof WeaponRowSchema.Type
+export type ChainRow = typeof ChainRowSchema.Type
+export type PouchCategoryRow = typeof PouchCategoryRowSchema.Type
+export type FavoriteCategoryRow = typeof FavoriteCategoryRowSchema.Type
+export type FavoriteItemRow = typeof FavoriteItemRowSchema.Type
+export type ForeignBlockedRow = typeof ForeignBlockedRowSchema.Type
+
+export const RawCatalogSchema = Schema.Struct({
+  drivers: Schema.Array(DriverRowSchema),
+  blades: Schema.Array(BladeRowSchema),
+  binds: Schema.Array(BindRowSchema),
+  effects: Schema.Array(EffectRowSchema),
+  excludes: Schema.Array(ExcludeRowSchema),
+  foreignBlocked: Schema.Array(Schema.String),
+  weapons: Schema.Array(WeaponRowSchema),
+  elementChains: Schema.Array(ChainRowSchema),
+  pouchCategories: Schema.Array(PouchCategoryRowSchema),
+  favoriteCategories: Schema.Array(FavoriteCategoryRowSchema),
+  favoriteItems: Schema.Array(FavoriteItemRowSchema),
+})
+
+export type RawCatalog = typeof RawCatalogSchema.Type
 

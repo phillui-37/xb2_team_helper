@@ -1,37 +1,14 @@
 import { match, P } from "ts-pattern"
 import type { BladeInfo, BladeOwners, BladeSource, Catalog, CharacterGift, DriverInfo, PouchBuff, PouchCategory, WeaponInfo } from "../types/common"
-import { DRIVER_TORA } from "../types/common"
-import type {
-  BladeRow,
-  BindRow,
-  ChainRow,
-  DriverRow,
-  EffectRow,
-  ExcludeRow,
-  FavoriteCategoryRow,
-  FavoriteItemRow,
-  PouchCategoryRow,
-  WeaponRow,
-} from "../types/dbRows"
-import { eligible, manualPick, selectBlades, solverPick } from "./criteria"
+import { DRIVER_TORA, EFFECTS, ELEMENTS } from "../types/common"
+import type { RawCatalog } from "./data/rowSchema"
+import { eligible, selectBlades, solverPick } from "./criteria"
 
-export function buildCatalog(raw: {
-  drivers: DriverRow[]
-  blades: BladeRow[]
-  binds: BindRow[]
-  effects: EffectRow[]
-  excludes: ExcludeRow[]
-  foreignBlocked: string[]
-  weapons: WeaponRow[]
-  elementChains: ChainRow[]
-  pouchCategories: PouchCategoryRow[]
-  favoriteCategories: FavoriteCategoryRow[]
-  favoriteItems: FavoriteItemRow[]
-}): Catalog {
-  const elements = ['fire', 'water', 'wind', 'ice', 'electricity', 'earth', 'dark', 'light']
-  const effects = ['break', 'topple', 'launch', 'smash']
-  const elementIndex = new Map(elements.map((name, i) => [name, i]))
-  const effectIndex = new Map(effects.map((name, i) => [name, i]))
+export function buildCatalog(raw: RawCatalog): Catalog {
+  const elements = [...ELEMENTS]
+  const effects = [...EFFECTS]
+  const elementIndex = new Map<string, number>(elements.map((name, i) => [name, i]))
+  const effectIndex = new Map<string, number>(effects.map((name, i) => [name, i]))
 
   const bindsByBlade = new Map<string, { driver: string; isFixed: boolean }[]>()
   for (const row of raw.binds) {
@@ -182,49 +159,7 @@ export function buildCatalog(raw: {
     categoryNames: pouchCategories.filter(c => c.buffKey === key).map(c => c.name),
   }))
 
-  const giftMap = new Map<string, CharacterGift>()
-  const giftKey = (ownerType: string, ownerName: string, persona: string) =>
-    `${ownerType}:${ownerName}:${persona}`
-
-  for (const row of raw.favoriteCategories) {
-    const id = giftKey(row.owner_type, row.owner_name, row.persona)
-    let gift = giftMap.get(id)
-    if (!gift) {
-      gift = {
-        id,
-        ownerType: row.owner_type,
-        ownerName: row.owner_name,
-        persona: row.persona || null,
-        categories: [],
-        items: [],
-        buffKeys: [],
-      }
-      giftMap.set(id, gift)
-    }
-    if (!gift.categories.includes(row.category))
-      gift.categories.push(row.category)
-    if (!gift.buffKeys.includes(row.buff_key))
-      gift.buffKeys.push(row.buff_key)
-  }
-  for (const row of raw.favoriteItems) {
-    const id = giftKey(row.owner_type, row.owner_name, row.persona)
-    let gift = giftMap.get(id)
-    if (!gift) {
-      gift = {
-        id,
-        ownerType: row.owner_type,
-        ownerName: row.owner_name,
-        persona: row.persona || null,
-        categories: [],
-        items: [],
-        buffKeys: [],
-      }
-      giftMap.set(id, gift)
-    }
-    if (!gift.items.some(item => item.name === row.item))
-      gift.items.push({ name: row.item, category: row.category })
-  }
-  const characterGifts = [...giftMap.values()]
+  const characterGifts = collectCharacterGifts(raw)
 
   const catalog: Catalog = {
     drivers,
@@ -253,7 +188,7 @@ export function buildCatalog(raw: {
     isForeignBound,
     effectsOf,
     manualCandidatesFor: (driver, owners) =>
-      selectBlades(blades, { catalog, driver, owners }, manualPick),
+      selectBlades(blades, { catalog, driver, owners }, eligible),
     solverCandidatesFor: (driver, owners, matchRole = true) =>
       selectBlades(
         blades,
@@ -263,4 +198,53 @@ export function buildCatalog(raw: {
     allElementsMask: (1 << elements.length) - 1,
   }
   return catalog
+}
+
+const giftKey = (ownerType: string, ownerName: string, persona: string) =>
+  `${ownerType}:${ownerName}:${persona}`
+
+const emptyGift = (
+  id: string,
+  ownerType: CharacterGift["ownerType"],
+  ownerName: string,
+  persona: string,
+): CharacterGift => ({
+  id,
+  ownerType,
+  ownerName,
+  persona: persona || null,
+  categories: [],
+  items: [],
+  buffKeys: [],
+})
+
+function collectCharacterGifts(raw: RawCatalog): CharacterGift[] {
+  const gifts = new Map<string, CharacterGift>()
+  const giftOf = (
+    ownerType: CharacterGift["ownerType"],
+    ownerName: string,
+    persona: string,
+  ): CharacterGift => {
+    const id = giftKey(ownerType, ownerName, persona)
+    let gift = gifts.get(id)
+    if (!gift) {
+      gift = emptyGift(id, ownerType, ownerName, persona)
+      gifts.set(id, gift)
+    }
+    return gift
+  }
+
+  for (const row of raw.favoriteCategories) {
+    const gift = giftOf(row.owner_type, row.owner_name, row.persona)
+    if (!gift.categories.includes(row.category))
+      gift.categories.push(row.category)
+    if (!gift.buffKeys.includes(row.buff_key))
+      gift.buffKeys.push(row.buff_key)
+  }
+  for (const row of raw.favoriteItems) {
+    const gift = giftOf(row.owner_type, row.owner_name, row.persona)
+    if (!gift.items.some(item => item.name === row.item))
+      gift.items.push({ name: row.item, category: row.category })
+  }
+  return [...gifts.values()]
 }

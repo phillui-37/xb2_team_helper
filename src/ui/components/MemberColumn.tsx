@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react"
 import { Clear } from "@mui/icons-material"
-import { Checkbox, Chip, FormControl, FormControlLabel, IconButton, InputLabel, MenuItem, Select, TextField } from "@mui/material"
+import { Checkbox, FormControl, FormControlLabel, IconButton, InputLabel, MenuItem, Select, TextField } from "@mui/material"
 import { match, P } from "ts-pattern"
 import type { BladeInfo, BladeOwners, Catalog, ElementChoice, MemberState, SlotName } from "../../types/common"
-import { ANY_ELEMENT, emptyBladeElements } from "../../types/common"
+import { DRIVER_NIA } from "../../types/common"
 import { holderOf } from "../../model/availability"
-import { NIA } from "../../model/solver"
+import { memberDefaultsForDriver, prefillFixedBlades } from "../../model/members"
 import {
   advancedNewGameOk,
   allowName,
@@ -18,6 +18,7 @@ import {
   uiFilters,
 } from "../../model/criteria"
 import { useI18n } from "../i18n/LanguageContext"
+import { BladeChips, BladeSlotSummary } from "./BladeChips"
 
 type DriverFilter = {
   elements: string[]
@@ -54,7 +55,7 @@ export default function MemberColumn(props: MemberColumnProps) {
       return true
     if (props.takenDrivers.has(d.name))
       return false
-    if (d.name === NIA && props.niaBladeTaken)
+    if (d.name === DRIVER_NIA && props.niaBladeTaken)
       return false
     return true
   })
@@ -95,21 +96,14 @@ export default function MemberColumn(props: MemberColumnProps) {
   }, [props.members, props.index])
 
   const setDriver = (driver: string) => {
-    const info = catalog.driverByName.get(driver)
-    const blades: [SlotName, SlotName, SlotName] = [null, null, null]
-    // Prefill unused fixed blades. Tora's Poppi stay locked; other drivers can replace them.
-    info?.fixedBlades.forEach((name, i) => {
-      if (i < 3 && !usedByOthers.has(name))
-        blades[i] = name
-    })
     props.onChange({
       driver,
-      blades,
-      matchRole: catalog.isBindsOnly(driver) ? true : state.matchRole,
-      borrowBound: !!info?.canUseForeign && (canBorrow ? state.borrowBound : true),
-      uniqueWeapon: catalog.isBindsOnly(driver) ? true : state.uniqueWeapon,
-      allowElementChange: false,
-      bladeElements: emptyBladeElements(),
+      blades: prefillFixedBlades(catalog, driver, usedByOthers),
+      ...memberDefaultsForDriver(catalog, driver, {
+        matchRole: state.matchRole,
+        uniqueWeapon: state.uniqueWeapon,
+        borrowBound: canBorrow ? state.borrowBound : true,
+      }),
     })
   }
 
@@ -246,7 +240,7 @@ export default function MemberColumn(props: MemberColumnProps) {
             />
           ))
           .with({ driver: P.string, locked: true }, ({ driver }) => (
-            <BladeSummary
+            <BladeSlotSummary
               key={slot}
               catalog={catalog}
               driver={driver}
@@ -425,110 +419,5 @@ function FilterSelect(props: {
         ))}
       </Select>
     </FormControl>
-  )
-}
-
-function BladeSummary(props: {
-  catalog: Catalog
-  driver: string
-  blade: string
-  slot: number
-  allowElementChange: boolean
-  elementChoice: ElementChoice
-  onElementChange: (choice: ElementChoice) => void
-}) {
-  const { t } = useI18n()
-  return (
-    <div className="flex flex-col gap-1">
-      <TextField
-        size="small"
-        label={`${t('ui.blade')} ${props.slot + 1}`}
-        value={t(`blade.${props.blade}`)}
-        slotProps={{ input: { readOnly: true } }}
-      />
-      <BladeChips
-        catalog={props.catalog}
-        driver={props.driver}
-        blade={props.blade}
-        allowElementChange={props.allowElementChange}
-        elementChoice={props.elementChoice}
-        onElementChange={props.onElementChange}
-      />
-    </div>
-  )
-}
-
-function BladeChips(props: {
-  catalog: Catalog
-  driver: string
-  blade: string
-  allowElementChange?: boolean
-  elementChoice?: ElementChoice
-  onElementChange?: (choice: ElementChoice) => void
-}) {
-  const { t } = useI18n()
-  const info = props.catalog.bladeByName.get(props.blade)
-  const effects = props.catalog.effectsOf(props.driver, props.blade)
-  const offRole = !props.catalog.isOnRole(props.driver, props.blade) && !props.catalog.isFixed(props.driver, props.blade)
-  const dedicated = props.catalog.dedicatedDrivers(props.blade)
-  const borrowed = dedicated.length > 0 && !dedicated.includes(props.driver)
-  const showElementSelect = !!info?.canChangeElement
-    && !!props.allowElementChange
-    && !!props.onElementChange
-  const defaultElement = info?.elements[0]
-  const selectedElement = props.elementChoice ?? defaultElement ?? ''
-  const selectId = `element-choice-${props.blade.replaceAll(' ', '-')}`
-  return (
-    <div className="flex flex-col gap-1">
-      {showElementSelect && (
-        <FormControl fullWidth size="small">
-          <InputLabel id={selectId} shrink>{t('ui.element')}</InputLabel>
-          <Select
-            labelId={selectId}
-            label={t('ui.element')}
-            value={selectedElement}
-            displayEmpty
-            notched
-            renderValue={value => {
-              if (!value || value === ANY_ELEMENT)
-                return t('ui.anyElement')
-              if (value === defaultElement)
-                return `${t(`element.${value}`)} (${t('ui.defaultElement')})`
-              return t(`element.${value}`)
-            }}
-            onChange={event => {
-              const value = event.target.value
-              props.onElementChange?.(value === defaultElement ? null : value)
-            }}
-          >
-            <MenuItem value={ANY_ELEMENT}>{t('ui.anyElement')}</MenuItem>
-            {props.catalog.elements.map(el => (
-              <MenuItem key={el} value={el}>
-                {el === defaultElement
-                  ? `${t(`element.${el}`)} (${t('ui.defaultElement')})`
-                  : t(`element.${el}`)}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      )}
-      <div className="flex flex-wrap gap-1">
-        {borrowed && <Chip size="small" color="info" label={t('ui.borrowed')} />}
-        {offRole && <Chip size="small" color="warning" label={t('ui.offRole')} />}
-        {info?.advancedNewGame && <Chip size="small" variant="outlined" label={t('ui.angTag')} />}
-        {info && (
-          <Chip size="small" color="secondary" variant="outlined" label={t(`weapon.${info.weaponName}`)} />
-        )}
-        {effects.map(eff => (
-          <Chip key={eff} size="small" color="primary" variant="outlined" label={t(`effect.${eff}`)} />
-        ))}
-        {!showElementSelect && info?.elements.map(el => (
-          <Chip key={el} size="small" variant="outlined" label={t(`element.${el}`)} />
-        ))}
-        {info && (
-          <Chip size="small" variant="outlined" label={`${t('ui.auxCores')} ×${info.auxCoreSlots}`} />
-        )}
-      </div>
-    </div>
   )
 }

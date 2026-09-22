@@ -1,4 +1,9 @@
-import { solve, solveFromPool, teamMemoKey, driverTriples, DEFAULT_PARTY_ROLES, rexFillRole } from "../src/model/solver.ts"
+import { solve } from "../src/model/solver.ts"
+import { solveFromPool } from "../src/model/poolSolve.ts"
+import { teamMemoKey } from "../src/model/results.ts"
+import { DEFAULT_PARTY_ROLES, driverTriples, rexFillRole } from "../src/model/party.ts"
+import { stubCatalog } from "../src/model/catalogStub.ts"
+import { loadCatalog } from "../src/model/data/loadCatalog.ts"
 import type { BladeInfo, Catalog, DriverInfo, MemberState, TeamMember } from "../src/types/common.ts"
 import { ANY_ELEMENT, emptyBladeElements } from "../src/types/common.ts"
 
@@ -37,18 +42,10 @@ function mockCatalog(opts: {
   allElementsMask?: number
   binds?: Record<string, { drivers: string[]; fixed?: boolean }>
 }): Catalog {
-  const bladeByName = new Map(opts.blades.map(b => [b.name, b]))
-  const driverByName = new Map(opts.drivers.map(d => [d.name, d]))
-  const effectIndex = new Map([["break", 0], ["topple", 1], ["launch", 2], ["smash", 3]])
-  const elements = ["fire", "water", "wind", "ice", "electricity", "earth", "dark", "light"]
   const binds = opts.binds ?? {}
-  return {
-    bladeByName,
-    driverByName,
+  return stubCatalog({
+    blades: opts.blades,
     drivers: opts.drivers,
-    effectIndex,
-    elements,
-    elementIndex: new Map(elements.map((name, i) => [name, i])),
     allElementsMask: opts.allElementsMask ?? 1,
     effectsOf: opts.effectsOf,
     solverCandidatesFor: () => opts.candidates,
@@ -56,8 +53,6 @@ function mockCatalog(opts: {
       const dedicated = binds[blade]?.drivers ?? []
       return dedicated.length > 0 && !dedicated.includes(driver)
     },
-    isEligible: () => true,
-    isOnRole: () => true,
     bladeSource: (blade) => {
       const bind = binds[blade]
       if (!bind)
@@ -65,14 +60,13 @@ function mockCatalog(opts: {
       return bind.fixed ? "FIXED" : "BINDED"
     },
     dedicatedDrivers: (blade) => binds[blade]?.drivers ?? [],
-    isBindsOnly: (driver) => driver === "tora",
     isFixed: (driver, blade) => !!binds[blade]?.fixed && (binds[blade]?.drivers.includes(driver) ?? false),
     canBorrowBound: (driver, blade) => {
       if (driver !== "rex")
         return false
       return blade !== "hana js" && blade !== "hana jk" && blade !== "hana jd"
     },
-  } as Catalog
+  })
 }
 
 const locked = [
@@ -621,4 +615,16 @@ console.log("solver duplicate checks passed", {
   twoAttackers: twoAttackers.length,
   boundKeep: boundKeep.length,
   poppiGuard: poppiGuard.length,
+})
+
+const live = loadCatalog()
+assert(live.drivers.length === 5, `expected 5 drivers, got ${live.drivers.length}`)
+assert(live.blades.length === 52, `expected 52 blades, got ${live.blades.length}`)
+assert(live.elements.length === 8, "catalog must list all 8 elements")
+assert(live.characterGifts.length > 0, "pouch gifts must load from the JSON snapshot")
+assert(live.solverCandidatesFor("rex", new Map()).length > 0, "Rex must have solver candidates")
+console.log("catalog snapshot checks passed", {
+  drivers: live.drivers.length,
+  blades: live.blades.length,
+  gifts: live.characterGifts.length,
 })

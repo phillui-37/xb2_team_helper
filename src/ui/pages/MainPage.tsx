@@ -1,196 +1,39 @@
-import { useEffect, useMemo, useState } from "react"
-import { Button, Checkbox, CircularProgress, FormControlLabel, Tab, Tabs, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material"
 import { match, P } from "ts-pattern"
-import DB from "../../model/db"
-import { driverTriples, hasNiaBlade, hasNiaDriver, solve, solveFromPool } from "../../model/solver"
-import { readOwners, reconcileMembers, storeOwners } from "../../model/owners"
-import { isPoolableBlade, readAllowTora, readPartyRoles, readPool, storeAllowTora, storePartyRoles, storePool } from "../../model/pool"
-import type { Catalog, Language, MemberState, TeamResult } from "../../types/common"
-import { emptyBladeElements } from "../../types/common"
+import { Tab, Tabs, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material"
+import { loadCatalog } from "../../model/data/loadCatalog"
+import type { Catalog, Language } from "../../types/common"
 import { LANGUAGES, useI18n } from "../i18n/LanguageContext"
-import MemberColumn from "../components/MemberColumn"
-import ResultList from "../components/ResultList"
+import { useAppSession } from "../state/useAppSession"
 import AssignPage from "./AssignPage"
-import PoolPage from "./PoolPage"
+import TeamPage from "./TeamPage"
 import WikiPage from "./wiki/WikiPage"
 
-type MainTab = 0 | 1 | 2
-type TeamMode = 'assign' | 'pool'
-
-const ANG_STORAGE_KEY = 'xb2-advanced-new-game'
-
-const emptyMember = (): MemberState => ({
-  driver: null,
-  blades: [null, null, null],
-  matchRole: true,
-  borrowBound: true,
-  uniqueWeapon: true,
-  allowElementChange: false,
-  bladeElements: emptyBladeElements(),
-})
-
-const readAdvancedNewGame = (): boolean => {
+function readCatalog(): { catalog: Catalog } | { error: string } {
   try {
-    return localStorage.getItem(ANG_STORAGE_KEY) === '1'
-  } catch {
-    return false
-  }
-}
-
-const storeAdvancedNewGame = (value: boolean): void => {
-  try {
-    localStorage.setItem(ANG_STORAGE_KEY, value ? '1' : '0')
-  } catch {
-    // ignore quota / private mode
+    return { catalog: loadCatalog() }
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) }
   }
 }
 
 export default function MainPage() {
-  const [catalog, setCatalog] = useState<Catalog | undefined>(undefined)
-  const [error, setError] = useState<string | undefined>(undefined)
-
-  useEffect(() => {
-    DB.getInstance().getCatalog()
-      .then(setCatalog)
-      .catch(err => setError(err instanceof Error ? err.message : String(err)))
-  }, [])
-
-  return match({ error, catalog })
+  return match(readCatalog())
     .with({ error: P.string }, ({ error }) => (
       <div className="p-app text-red-700">{error}</div>
     ))
-    .with({ catalog: P.nonNullable }, ({ catalog }) => (
+    .otherwise(({ catalog }) => (
       <AppShell catalog={catalog} />
-    ))
-    .otherwise(() => (
-      <div className="flex min-h-dvh items-center justify-center p-app"><CircularProgress /></div>
     ))
 }
 
 function AppShell(props: { catalog: Catalog }) {
-  const { catalog } = props
   const { t, lang, setLang } = useI18n()
-  const [tab, setTab] = useState<MainTab>(0)
-  const [teamMode, setTeamMode] = useState<TeamMode>('assign')
-  const [owners, setOwners] = useState<Map<string, string>>(() => readOwners(catalog))
-  const [pool, setPool] = useState<Set<string>>(() => readPool(catalog))
-  const [allowTora, setAllowTora] = useState(readAllowTora)
-  const [partyRoles, setPartyRoles] = useState(readPartyRoles)
-  const [poolMatchRole, setPoolMatchRole] = useState(true)
-  const [poolUniqueWeapon, setPoolUniqueWeapon] = useState(true)
-  const [poolBorrowBound, setPoolBorrowBound] = useState(true)
-  const [members, setMembers] = useState<MemberState[]>([emptyMember(), emptyMember(), emptyMember()])
-  const [redundancy, setRedundancy] = useState(false)
-  const [advancedNewGame, setAdvancedNewGame] = useState(readAdvancedNewGame)
-  const [results, setResults] = useState<TeamResult[] | undefined>(undefined)
-  const [calculating, setCalculating] = useState(false)
-
-  const takenDrivers = useMemo(
-    () => new Set(members.map(m => m.driver).filter((d): d is string => !!d)),
-    [members],
-  )
-  const niaBladeTaken = hasNiaBlade(members)
-  const niaDriverTaken = hasNiaDriver(members)
-  const poolTriples = useMemo(
-    () => driverTriples(
-      allowTora,
-      new Set(catalog.drivers.map(driver => driver.name)),
-      { catalog, roles: partyRoles },
-    ),
-    [allowTora, catalog, partyRoles],
-  )
-  const canCalculate = teamMode === 'pool' ? poolTriples.length > 0 : members.every(m => m.driver)
-
-  const updateMember = (index: number, next: MemberState) => {
-    setMembers(ori => reconcileMembers(
-      catalog,
-      ori.map((m, i) => i === index ? next : m),
-      owners,
-      index,
-    ))
-    setResults(undefined)
-  }
-
-  const updateOwners = (next: Map<string, string>) => {
-    storeOwners(next)
-    setOwners(next)
-    setMembers(ori => reconcileMembers(catalog, ori, next))
-    setResults(undefined)
-  }
-
-  const updatePool = (next: Set<string>) => {
-    storePool(next)
-    setPool(next)
-    setResults(undefined)
-  }
-
-  const updateAllowTora = (enabled: boolean) => {
-    storeAllowTora(enabled)
-    setAllowTora(enabled)
-    setResults(undefined)
-  }
-
-  const updatePartyRoles = (roles: typeof partyRoles) => {
-    storePartyRoles(roles)
-    setPartyRoles(roles)
-    setResults(undefined)
-  }
-
-  const updateAdvancedNewGame = (enabled: boolean) => {
-    storeAdvancedNewGame(enabled)
-    setAdvancedNewGame(enabled)
-    if (!enabled) {
-      setMembers(ori => reconcileMembers(
-        catalog,
-        ori.map(member => ({
-          ...member,
-          blades: member.blades.map(blade => {
-            if (!blade)
-              return blade
-            return catalog.bladeByName.get(blade)?.advancedNewGame ? null : blade
-          }) as MemberState['blades'],
-        })),
-        owners,
-      ))
-      setPool(ori => {
-        const next = new Set([...ori].filter(name => {
-          const blade = catalog.bladeByName.get(name)
-          return !!blade && isPoolableBlade(catalog, blade, false)
-        }))
-        storePool(next)
-        return next
-      })
-    }
-    setResults(undefined)
-  }
-
-  const runCalculate = () => {
-    if (!canCalculate)
-      return
-    setCalculating(true)
-    setResults(undefined)
-    window.setTimeout(() => {
-      const found = teamMode === 'pool'
-        ? solveFromPool(catalog, {
-          pool,
-          allowTora,
-          redundancy,
-          advancedNewGame,
-          matchRole: poolMatchRole,
-          uniqueWeapon: poolUniqueWeapon,
-          borrowBound: poolBorrowBound,
-          roles: partyRoles,
-        })
-        : solve(catalog, members, redundancy, owners, advancedNewGame)
-      setResults(found)
-      setCalculating(false)
-    }, 0)
-  }
+  const session = useAppSession(props.catalog)
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-6xl flex-col gap-6 p-app">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <Typography variant="h5">{t('ui.title')}</Typography>
+        <Typography variant="h5">{t("ui.title")}</Typography>
         <ToggleButtonGroup
           exclusive
           size="small"
@@ -207,142 +50,29 @@ function AppShell(props: { catalog: Catalog }) {
       </header>
 
       <Tabs
-        value={tab}
-        onChange={(_event, value: MainTab) => setTab(value)}
+        value={session.tab}
+        onChange={(_event, value: typeof session.tab) => session.setTab(value)}
       >
-        <Tab label={t('ui.tabTeam')} />
-        <Tab label={t('ui.tabAssign')} />
-        <Tab label={t('ui.tabWiki')} />
+        <Tab value="team" label={t("ui.tabTeam")} />
+        <Tab value="assign" label={t("ui.tabAssign")} />
+        <Tab value="wiki" label={t("ui.tabWiki")} />
       </Tabs>
 
-      {match(tab)
-        .with(0, () => (
-          <>
-            <div className="flex flex-wrap items-center gap-3">
-              <ToggleButtonGroup
-                exclusive
-                size="small"
-                value={teamMode}
-                onChange={(_event, value: TeamMode | null) => {
-                  if (!value || value === teamMode)
-                    return
-                  setTeamMode(value)
-                  setResults(undefined)
-                }}
-              >
-                <ToggleButton value="assign">{t('ui.modeAssign')}</ToggleButton>
-                <ToggleButton value="pool">{t('ui.modePool')}</ToggleButton>
-              </ToggleButtonGroup>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={advancedNewGame}
-                    onChange={event => updateAdvancedNewGame(event.target.checked)}
-                  />
-                }
-                label={t('ui.advancedNewGame')}
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={redundancy}
-                    onChange={event => {
-                      setRedundancy(event.target.checked)
-                      setResults(undefined)
-                    }}
-                  />
-                }
-                label={t('ui.redundancy')}
-              />
-              <Button
-                variant="contained"
-                onClick={runCalculate}
-                disabled={!canCalculate || calculating}
-              >
-                {t('ui.calculate')}
-              </Button>
-              {!canCalculate && (
-                <Typography variant="body2" color="text.secondary">
-                  {teamMode === 'pool' ? t('ui.selectPartyRoles') : t('ui.selectDrivers')}
-                </Typography>
-              )}
-              {calculating && <CircularProgress size={22} />}
-            </div>
-
-            {teamMode === 'assign' && (
-              <div className="flex flex-col gap-3 md:flex-row">
-                {members.map((member, index) => (
-                  <MemberColumn
-                    key={index}
-                    catalog={catalog}
-                    index={index}
-                    state={member}
-                    members={members}
-                    owners={owners}
-                    takenDrivers={takenDrivers}
-                    niaBladeTaken={niaBladeTaken}
-                    niaDriverTaken={niaDriverTaken}
-                    advancedNewGame={advancedNewGame}
-                    onChange={next => updateMember(index, next)}
-                  />
-                ))}
-              </div>
-            )}
-
-            {(teamMode === 'assign' || calculating || results) && (
-              <section className={`flex flex-col gap-2 ${teamMode === 'pool' ? 'max-h-[70vh] overflow-auto' : ''}`}>
-                <Typography variant="h6">{t('ui.results')}</Typography>
-                {calculating && <Typography color="text.secondary">{t('ui.loading')}</Typography>}
-                {results && (
-                  <ResultList
-                    catalog={catalog}
-                    results={results}
-                    showPriority={teamMode === 'pool'}
-                  />
-                )}
-              </section>
-            )}
-
-            {teamMode === 'pool' && (
-              <PoolPage
-                catalog={catalog}
-                pool={pool}
-                advancedNewGame={advancedNewGame}
-                allowTora={allowTora}
-                roles={partyRoles}
-                matchRole={poolMatchRole}
-                uniqueWeapon={poolUniqueWeapon}
-                borrowBound={poolBorrowBound}
-                onChange={updatePool}
-                onAllowToraChange={updateAllowTora}
-                onRolesChange={updatePartyRoles}
-                onMatchRoleChange={enabled => {
-                  setPoolMatchRole(enabled)
-                  setResults(undefined)
-                }}
-                onUniqueWeaponChange={enabled => {
-                  setPoolUniqueWeapon(enabled)
-                  setResults(undefined)
-                }}
-                onBorrowBoundChange={enabled => {
-                  setPoolBorrowBound(enabled)
-                  setResults(undefined)
-                }}
-              />
-            )}
-          </>
+      {match(session.tab)
+        .with("team", () => (
+          <TeamPage session={session} />
         ))
-        .with(1, () => (
+        .with("assign", () => (
           <AssignPage
-            catalog={catalog}
-            owners={owners}
-            advancedNewGame={advancedNewGame}
-            onAdvancedNewGameChange={updateAdvancedNewGame}
-            onChange={updateOwners}
+            catalog={session.catalog}
+            owners={session.owners}
+            advancedNewGame={session.advancedNewGame}
+            onAdvancedNewGameChange={session.updateAdvancedNewGame}
+            onChange={session.updateOwners}
           />
         ))
-        .with(2, () => (
-          <WikiPage catalog={catalog} />
+        .with("wiki", () => (
+          <WikiPage catalog={session.catalog} />
         ))
         .exhaustive()}
     </div>
