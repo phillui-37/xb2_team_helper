@@ -69,3 +69,38 @@ export const readAdvancedNewGame = (): boolean => readFlag(ANG_STORAGE_KEY)
 export const storeAdvancedNewGame = (value: boolean): void => {
   writeFlag(ANG_STORAGE_KEY, value)
 }
+
+const POOL_SEARCH_STORAGE_KEY = 'xb2-pool-search'
+
+export type PoolSearchOptions = {
+  matchRole: boolean
+  uniqueWeapon: boolean
+  borrowBound: boolean
+}
+
+const DEFAULT_POOL_SEARCH: PoolSearchOptions = {
+  matchRole: true,
+  uniqueWeapon: true,
+  borrowBound: true,
+}
+
+export const readPoolSearch = (): PoolSearchOptions =>
+  readJson(POOL_SEARCH_STORAGE_KEY, raw => {
+    if (!raw || typeof raw !== 'object')
+      return undefined
+    const record = raw as Record<string, unknown>
+    if (typeof record.matchRole !== 'boolean'
+      || typeof record.uniqueWeapon !== 'boolean'
+      || typeof record.borrowBound !== 'boolean')
+      return undefined
+    return {
+      matchRole: record.matchRole,
+      uniqueWeapon: record.uniqueWeapon,
+      borrowBound: record.borrowBound,
+    }
+  }, DEFAULT_POOL_SEARCH)
+
+export const storePoolSearch = (options: PoolSearchOptions): void => {
+  writeJson(POOL_SEARCH_STORAGE_KEY, options)
+}
+

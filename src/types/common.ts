@@ -105,7 +105,7 @@ export type CharacterGift = {
   buffKeys: string[]
 }
 
-export type Catalog = {
+export type CatalogData = {
   drivers: DriverInfo[]
   blades: BladeInfo[]
   weapons: WeaponInfo[]
@@ -120,6 +120,10 @@ export type Catalog = {
   pouchCategories: PouchCategory[]
   pouchBuffs: PouchBuff[]
   characterGifts: CharacterGift[]
+  allElementsMask: number
+}
+
+export type CatalogQueries = {
   bladeSource: (blade: string) => BladeSource
   dedicatedDrivers: (blade: string) => string[]
   assignableDrivers: (blade: string) => string[]
@@ -133,5 +137,7 @@ export type Catalog = {
   effectsOf: (driver: string, blade: string) => string[]
   manualCandidatesFor: (driver: string, owners: BladeOwners) => BladeInfo[]
   solverCandidatesFor: (driver: string, owners: BladeOwners, matchRole?: boolean) => BladeInfo[]
-  allElementsMask: number
 }
+
+export type Catalog = CatalogData & CatalogQueries
+

@@ -1,33 +1,10 @@
 import { match, P } from "ts-pattern"
 import type { BladeInfo, BladeOwners, BladeSource, Catalog, CharacterGift, DriverInfo, PouchBuff, PouchCategory, WeaponInfo } from "../types/common"
 import { DRIVER_TORA, EFFECTS, ELEMENTS } from "../types/common"
-import type {
-  BladeRow,
-  BindRow,
-  ChainRow,
-  DriverRow,
-  EffectRow,
-  ExcludeRow,
-  FavoriteCategoryRow,
-  FavoriteItemRow,
-  PouchCategoryRow,
-  WeaponRow,
-} from "./data/rowSchema"
+import type { RawCatalog } from "./data/rowSchema"
 import { eligible, selectBlades, solverPick } from "./criteria"
 
-export function buildCatalog(raw: {
-  drivers: DriverRow[]
-  blades: BladeRow[]
-  binds: BindRow[]
-  effects: EffectRow[]
-  excludes: ExcludeRow[]
-  foreignBlocked: string[]
-  weapons: WeaponRow[]
-  elementChains: ChainRow[]
-  pouchCategories: PouchCategoryRow[]
-  favoriteCategories: FavoriteCategoryRow[]
-  favoriteItems: FavoriteItemRow[]
-}): Catalog {
+export function buildCatalog(raw: RawCatalog): Catalog {
   const elements = [...ELEMENTS]
   const effects = [...EFFECTS]
   const elementIndex = new Map<string, number>(elements.map((name, i) => [name, i]))

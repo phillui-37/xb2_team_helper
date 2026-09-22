@@ -90,3 +90,19 @@ export type FavoriteItemRow = typeof FavoriteItemRowSchema.Type
 export type ForeignBlockedRow = typeof ForeignBlockedRowSchema.Type
 export type OwnersJson = typeof OwnersJsonSchema.Type
 
+export const RawCatalogSchema = Schema.Struct({
+  drivers: Schema.Array(DriverRowSchema),
+  blades: Schema.Array(BladeRowSchema),
+  binds: Schema.Array(BindRowSchema),
+  effects: Schema.Array(EffectRowSchema),
+  excludes: Schema.Array(ExcludeRowSchema),
+  foreignBlocked: Schema.Array(Schema.String),
+  weapons: Schema.Array(WeaponRowSchema),
+  elementChains: Schema.Array(ChainRowSchema),
+  pouchCategories: Schema.Array(PouchCategoryRowSchema),
+  favoriteCategories: Schema.Array(FavoriteCategoryRowSchema),
+  favoriteItems: Schema.Array(FavoriteItemRowSchema),
+})
+
+export type RawCatalog = typeof RawCatalogSchema.Type
+
