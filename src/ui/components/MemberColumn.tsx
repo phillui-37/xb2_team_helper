@@ -18,6 +18,7 @@ import {
   uiFilters,
 } from "../../model/criteria"
 import { useI18n } from "../i18n/LanguageContext"
+import BladeFactChips from "./BladeFactChips"
 
 type DriverFilter = {
   elements: string[]
@@ -505,23 +506,22 @@ function BladeChips(props: {
           </Select>
         </FormControl>
       )}
-      <div className="flex flex-wrap gap-1">
-        {borrowed && <Chip size="small" color="info" label={t('ui.borrowed')} />}
-        {offRole && <Chip size="small" color="warning" label={t('ui.offRole')} />}
-        {info?.advancedNewGame && <Chip size="small" variant="outlined" label={t('ui.angTag')} />}
-        {info && (
-          <Chip size="small" color="secondary" variant="outlined" label={t(`weapon.${info.weaponName}`)} />
+      {info && (
+          <BladeFactChips
+            blade={info}
+            leading={
+              <>
+                {borrowed && <Chip size="small" color="info" label={t('ui.borrowed')} />}
+                {offRole && <Chip size="small" color="warning" label={t('ui.offRole')} />}
+                {info.advancedNewGame && <Chip size="small" variant="outlined" label={t('ui.angTag')} />}
+              </>
+            }
+            afterWeapon={effects.map(eff => (
+              <Chip key={eff} size="small" color="primary" variant="outlined" label={t(`effect.${eff}`)} />
+            ))}
+            showElements={!showElementSelect}
+          />
         )}
-        {effects.map(eff => (
-          <Chip key={eff} size="small" color="primary" variant="outlined" label={t(`effect.${eff}`)} />
-        ))}
-        {!showElementSelect && info?.elements.map(el => (
-          <Chip key={el} size="small" variant="outlined" label={t(`element.${el}`)} />
-        ))}
-        {info && (
-          <Chip size="small" variant="outlined" label={`${t('ui.auxCores')} ×${info.auxCoreSlots}`} />
-        )}
-      </div>
     </div>
   )
 }

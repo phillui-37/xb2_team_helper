@@ -3,6 +3,7 @@ import type { Catalog, TeamResult } from "../../types/common"
 import { ANY_ELEMENT, DRIVER_REX } from "../../types/common"
 import { rexFillRole } from "../../model/party"
 import { useI18n } from "../i18n/LanguageContext"
+import { auxCoreLabel } from "./BladeFactChips"
 
 export default function ResultList(props: {
   catalog: Catalog
@@ -42,7 +43,7 @@ export default function ResultList(props: {
                     const slots = props.catalog.bladeByName.get(blade)?.auxCoreSlots
                     const details = [
                       elementLabel,
-                      slots !== undefined ? `${t('ui.auxCores')} ×${slots}` : null,
+                      slots !== undefined ? auxCoreLabel(t, slots) : null,
                     ].filter((part): part is string => !!part)
                     return (
                       <Typography key={`${blade}-${slot}`} variant="body2">
@@ -68,7 +69,7 @@ export default function ResultList(props: {
                 size="small"
                 color="success"
                 variant="outlined"
-                label={`${t('ui.auxCores')} ×${team.auxCoreSlots}`}
+                label={auxCoreLabel(t, team.auxCoreSlots)}
               />
               {props.catalog.elements.map((el, idx) => (
                 (team.elementMask & (1 << idx)) !== 0

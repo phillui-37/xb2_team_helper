@@ -3,17 +3,7 @@ import { Checkbox, Chip, FormControlLabel, Typography } from "@mui/material"
 import type { BladeInfo, Catalog } from "../../types/common"
 import { useI18n } from "../i18n/LanguageContext"
 import { sourceLabelKey } from "../misc/bladeSource"
-
-export function elementChipLabel(
-  t: (key: string) => string,
-  blade: BladeInfo,
-  element: string,
-): string {
-  const label = t(`element.${element}`)
-  return blade.canChangeElement
-    ? `${label} (${t("ui.defaultElement")})`
-    : label
-}
+import BladeFactChips from "./BladeFactChips"
 
 export default function BladeListCard(props: {
   catalog: Catalog
@@ -37,26 +27,11 @@ export default function BladeListCard(props: {
           <Chip size="small" variant="outlined" label={t("ui.angTag")} />
         )}
       </div>
-      <div className="mt-1 flex flex-wrap gap-1">
-        <Chip
-          size="small"
-          variant="outlined"
-          color="secondary"
-          label={t(`weapon.${blade.weaponName}`)}
-        />
-        {props.extraChips}
-        {blade.elements.map(el => (
-          <Chip
-            key={el}
-            size="small"
-            variant="outlined"
-            label={elementChipLabel(t, blade, el)}
-          />
-        ))}
-        <Chip
-          size="small"
-          variant="outlined"
-          label={`${t("ui.auxCores")} ×${blade.auxCoreSlots}`}
+      <div className="mt-1">
+        <BladeFactChips
+          blade={blade}
+          afterWeapon={props.extraChips}
+          markDefaultElement
         />
       </div>
     </div>
