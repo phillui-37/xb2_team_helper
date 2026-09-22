@@ -110,9 +110,11 @@ export default defineConfig({
     chunkSizeWarningLimit: 900,
     rollupOptions: {
       output: {
-        entryFileNames: chunk => isWorker(chunk.name) ? "[name].js" : "app.min.js",
-        chunkFileNames: chunk => isWorker(chunk.name) ? "[name].js" : "assets/[name].js",
-        assetFileNames: "assets/[name][extname]",
+        entryFileNames: chunk => isWorker(chunk.name)
+          ? "assets/[name]-[hash].js"
+          : "assets/app-[hash].js",
+        chunkFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash][extname]",
       },
     },
   },
