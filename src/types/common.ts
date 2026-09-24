@@ -6,6 +6,7 @@ export type BladeOwners = ReadonlyMap<string, string>
 export const DRIVER_REX = 'rex'
 export const DRIVER_NIA = 'nia'
 export const DRIVER_TORA = 'tora'
+export const BLADE_SEIHAI = 'seihai'
 export const DRIVER_ORDER = ['rex', 'nia', 'merefu', 'zig', 'tora'] as const
 export type DriverName = typeof DRIVER_ORDER[number]
 

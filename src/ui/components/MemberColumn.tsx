@@ -6,6 +6,7 @@ import type { BladeInfo, BladeOwners, Catalog, ElementChoice, MemberState, SlotN
 import { DRIVER_NIA } from "../../types/common"
 import { holderOf } from "../../model/availability"
 import { memberDefaultsForDriver, prefillFixedBlades } from "../../model/members"
+import { bladeMatchesPartyRole } from "../../model/party"
 import {
   advancedNewGameOk,
   allowName,
@@ -63,13 +64,13 @@ export default function MemberColumn(props: MemberColumnProps) {
   const weaponOptions = useMemo(() => {
     if (!state.driver)
       return [] as { name: string; onRole: boolean }[]
-    const driver = catalog.driverByName.get(state.driver)
+    const partyDrivers = props.members.map(member => member.driver).filter((name): name is string => !!name)
     const seen = new Map<string, boolean>()
     for (const blade of catalog.manualCandidatesFor(state.driver, owners)) {
       if (blade.advancedNewGame && !props.advancedNewGame)
         continue
       if (!seen.has(blade.weaponName))
-        seen.set(blade.weaponName, !!driver && driver.role === blade.weaponRole)
+        seen.set(blade.weaponName, bladeMatchesPartyRole(catalog, state.driver, blade.name, partyDrivers))
     }
     return [...seen.entries()]
       .map(([name, onRole]) => ({ name, onRole }))
@@ -78,7 +79,7 @@ export default function MemberColumn(props: MemberColumnProps) {
           return a.onRole ? -1 : 1
         return t(`weapon.${a.name}`).localeCompare(t(`weapon.${b.name}`), undefined, { sensitivity: 'base' })
       })
-  }, [catalog, state.driver, owners, props.advancedNewGame, t])
+  }, [catalog, state.driver, owners, props.advancedNewGame, props.members, t])
 
   const canBorrow = !!state.driver && !!catalog.driverByName.get(state.driver)?.canUseForeign
 
@@ -249,9 +250,11 @@ export default function MemberColumn(props: MemberColumnProps) {
               allowElementChange={state.allowElementChange}
               elementChoice={state.bladeElements[slot] ?? null}
               onElementChange={choice => setBladeElement(slot, choice)}
+              partyDrivers={props.members.map(member => member.driver).filter((name): name is string => !!name)}
             />
           ))
           .with({ driver: P.string }, ({ driver: driverName }) => {
+            const partyDrivers = props.members.map(member => member.driver).filter((name): name is string => !!name)
             const options = selectBlades(
               catalog.blades,
               { catalog, driver: driverName, owners },
@@ -270,8 +273,8 @@ export default function MemberColumn(props: MemberColumnProps) {
               const bMove = optionMoveRank(catalog, driverName, b.name, props.members)
               if (aMove !== bMove)
                 return aMove - bMove
-              const aOn = catalog.isOnRole(driverName, a.name) ? 0 : 1
-              const bOn = catalog.isOnRole(driverName, b.name) ? 0 : 1
+              const aOn = bladeMatchesPartyRole(catalog, driverName, a.name, partyDrivers) ? 0 : 1
+              const bOn = bladeMatchesPartyRole(catalog, driverName, b.name, partyDrivers) ? 0 : 1
               if (aOn !== bOn)
                 return aOn - bOn
               return t(`blade.${a.name}`).localeCompare(t(`blade.${b.name}`), undefined, { sensitivity: 'base' })
@@ -296,7 +299,7 @@ export default function MemberColumn(props: MemberColumnProps) {
                     >
                       <MenuItem value="">{t('ui.empty')}</MenuItem>
                       {options.map(b => {
-                        const offRole = !catalog.isOnRole(driverName, b.name)
+                        const offRole = !bladeMatchesPartyRole(catalog, driverName, b.name, partyDrivers)
                         const dedicated = catalog.dedicatedDrivers(b.name)
                         const holder = holderOf(props.members, b.name)
                         const borrowed = dedicated.length > 0 && !dedicated.includes(driverName)
@@ -331,6 +334,7 @@ export default function MemberColumn(props: MemberColumnProps) {
                     allowElementChange={state.allowElementChange}
                     elementChoice={state.bladeElements[slot] ?? null}
                     onElementChange={choice => setBladeElement(slot, choice)}
+                    partyDrivers={partyDrivers}
                   />
                 )}
               </div>

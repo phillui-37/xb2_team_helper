@@ -150,7 +150,7 @@
     "partyRoles": "Party roles",
     "selectPartyRoles": "Need 3 drivers for these roles",
     "rexFill": "as {{role}}",
-    "partyRolesHint": "Rex can fill a missing Tank or Healer only when the other two drivers do not already cover that role.",
+    "partyRolesHint": "Rex can fill a missing Tank or Healer only when the other two drivers do not already cover that role. When he does, every blade except Aegis must match that role.",
     "poolHint": "Mark blades to prefer first. A party cannot use every selected blade; leftover pool blades are skipped, and other blades can fill remaining slots. Fixed blades stay on their driver. Bound blades stay with their owner unless Rex borrows them. Tora always uses the three Poppi.",
     "poolSelectVisible": "Select visible",
     "poolClearVisible": "Clear visible",

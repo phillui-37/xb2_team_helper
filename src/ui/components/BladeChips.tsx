@@ -1,5 +1,6 @@
 import { Chip, TextField } from "@mui/material"
 import type { Catalog, ElementChoice } from "../../types/common"
+import { bladeMatchesPartyRole } from "../../model/party"
 import { useI18n } from "../i18n/LanguageContext"
 import BladeFactChips from "./BladeFactChips"
 import ElementChoiceSelect from "./ElementChoiceSelect"
@@ -12,6 +13,7 @@ export function BladeSlotSummary(props: {
   allowElementChange: boolean
   elementChoice: ElementChoice
   onElementChange: (choice: ElementChoice) => void
+  partyDrivers?: readonly string[]
 }) {
   const { t } = useI18n()
   return (
@@ -29,6 +31,7 @@ export function BladeSlotSummary(props: {
         allowElementChange={props.allowElementChange}
         elementChoice={props.elementChoice}
         onElementChange={props.onElementChange}
+        partyDrivers={props.partyDrivers}
       />
     </div>
   )
@@ -41,12 +44,15 @@ export function BladeChips(props: {
   allowElementChange?: boolean
   elementChoice?: ElementChoice
   onElementChange?: (choice: ElementChoice) => void
+  partyDrivers?: readonly string[]
 }) {
   const { t } = useI18n()
   const info = props.catalog.bladeByName.get(props.blade)
   const effects = props.catalog.effectsOf(props.driver, props.blade)
-  const offRole = !props.catalog.isOnRole(props.driver, props.blade)
-    && !props.catalog.isFixed(props.driver, props.blade)
+  const onRole = props.partyDrivers
+    ? bladeMatchesPartyRole(props.catalog, props.driver, props.blade, props.partyDrivers)
+    : props.catalog.isOnRole(props.driver, props.blade)
+  const offRole = !onRole && !props.catalog.isFixed(props.driver, props.blade)
   const dedicated = props.catalog.dedicatedDrivers(props.blade)
   const borrowed = dedicated.length > 0 && !dedicated.includes(props.driver)
   const showElementSelect = !!info?.canChangeElement

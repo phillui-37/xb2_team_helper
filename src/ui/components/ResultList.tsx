@@ -1,7 +1,7 @@
 import { Card, CardContent, Chip, Typography } from "@mui/material"
 import type { Catalog, TeamResult } from "../../types/common"
 import { ANY_ELEMENT, DRIVER_REX } from "../../types/common"
-import { rexFillRole } from "../../model/party"
+import { rexAssignedFill, type PartyRoles } from "../../model/party"
 import { useI18n } from "../i18n/LanguageContext"
 import { auxCoreLabel } from "./BladeFactChips"
 
@@ -9,6 +9,7 @@ export default function ResultList(props: {
   catalog: Catalog
   results: TeamResult[]
   showPriority?: boolean
+  roles?: PartyRoles
 }) {
   const { t } = useI18n()
   if (props.results.length === 0) {
@@ -25,7 +26,7 @@ export default function ResultList(props: {
             <div className="grid gap-3 md:grid-cols-3">
               {team.members.map(member => {
                 const fill = member.driver === DRIVER_REX
-                  ? rexFillRole(props.catalog, team.members.map(item => item.driver))
+                  ? rexAssignedFill(props.catalog, team.members.map(item => item.driver), props.roles)
                   : null
                 return (
                   <div key={member.driver} className="flex flex-col gap-1">

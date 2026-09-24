@@ -86,6 +86,7 @@ export default function TeamPage(props: { session: AppSession }) {
               catalog={s.catalog}
               results={s.results}
               showPriority={s.teamMode === "pool"}
+              roles={s.teamMode === "pool" ? s.partyRoles : undefined}
             />
           )}
         </section>
