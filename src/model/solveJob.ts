@@ -20,6 +20,8 @@ export type SolvePoolJob = {
   matchRole: boolean
   uniqueWeapon: boolean
   borrowBound: boolean
+  allowPoppiElementChange: boolean
+  rexFixedAttacker: boolean
   roles: PartyRoles
 }
 
@@ -44,6 +46,8 @@ export function runSolveJob(catalog: Catalog, job: SolveJob): TeamResult[] {
       matchRole: job.matchRole,
       uniqueWeapon: job.uniqueWeapon,
       borrowBound: job.borrowBound,
+      allowPoppiElementChange: job.allowPoppiElementChange,
+      rexFixedAttacker: job.rexFixedAttacker,
       roles: job.roles,
     })
   }

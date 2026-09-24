@@ -76,13 +76,24 @@ export type PoolSearchOptions = {
   matchRole: boolean
   uniqueWeapon: boolean
   borrowBound: boolean
+  allowPoppiElementChange: boolean
+  rexFixedAttacker: boolean
 }
 
 const DEFAULT_POOL_SEARCH: PoolSearchOptions = {
   matchRole: true,
   uniqueWeapon: true,
   borrowBound: true,
+  allowPoppiElementChange: true,
+  rexFixedAttacker: false,
 }
+
+const readOptionalFlag = (
+  record: Record<string, unknown>,
+  key: keyof PoolSearchOptions,
+  fallback: boolean,
+): boolean =>
+  typeof record[key] === 'boolean' ? record[key] : fallback
 
 export const readPoolSearch = (): PoolSearchOptions =>
   readJson(POOL_SEARCH_STORAGE_KEY, raw => {
@@ -97,6 +108,16 @@ export const readPoolSearch = (): PoolSearchOptions =>
       matchRole: record.matchRole,
       uniqueWeapon: record.uniqueWeapon,
       borrowBound: record.borrowBound,
+      allowPoppiElementChange: readOptionalFlag(
+        record,
+        'allowPoppiElementChange',
+        DEFAULT_POOL_SEARCH.allowPoppiElementChange,
+      ),
+      rexFixedAttacker: readOptionalFlag(
+        record,
+        'rexFixedAttacker',
+        DEFAULT_POOL_SEARCH.rexFixedAttacker,
+      ),
     }
   }, DEFAULT_POOL_SEARCH)
 

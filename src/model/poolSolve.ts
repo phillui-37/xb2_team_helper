@@ -13,13 +13,15 @@ export type PoolSolveOptions = {
   matchRole: boolean
   uniqueWeapon: boolean
   borrowBound: boolean
+  allowPoppiElementChange: boolean
+  rexFixedAttacker: boolean
   roles?: PartyRoles
 }
 
 const memberForDriver = (
   catalog: Catalog,
   driver: string,
-  options: Pick<PoolSolveOptions, 'matchRole' | 'uniqueWeapon' | 'borrowBound'>,
+  options: Pick<PoolSolveOptions, 'matchRole' | 'uniqueWeapon' | 'borrowBound' | 'allowPoppiElementChange'>,
 ): MemberState => {
   const member: MemberState = {
     driver,
@@ -30,7 +32,7 @@ const memberForDriver = (
       borrowBound: options.borrowBound,
     }),
   }
-  if (driver !== DRIVER_TORA)
+  if (driver !== DRIVER_TORA || !options.allowPoppiElementChange)
     return member
   return {
     ...member,
@@ -86,7 +88,11 @@ export function solveFromPool(
 ): TeamResult[] {
   const roles = options.roles ?? DEFAULT_PARTY_ROLES
   const availableDrivers = new Set(catalog.drivers.map(d => d.name))
-  const triples = driverTriples(options.allowTora, availableDrivers, { catalog, roles })
+  const triples = driverTriples(options.allowTora, availableDrivers, {
+    catalog,
+    roles,
+    rexFixedAttacker: options.rexFixedAttacker,
+  })
   const prepared = triples.map(triple =>
     assignBoundPoolBlades(
       catalog,
