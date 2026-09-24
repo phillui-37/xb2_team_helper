@@ -86,7 +86,9 @@ export default function TeamPage(props: { session: AppSession }) {
               catalog={s.catalog}
               results={s.results}
               showPriority={s.teamMode === "pool"}
-              {...(s.teamMode === "pool" ? { roles: s.partyRoles } : {})}
+              {...(s.teamMode === "pool"
+                ? { roles: s.partyRoles, rexFixedAttacker: s.poolSearch.rexFixedAttacker }
+                : {})}
             />
           )}
         </section>
@@ -102,12 +104,16 @@ export default function TeamPage(props: { session: AppSession }) {
           matchRole={s.poolSearch.matchRole}
           uniqueWeapon={s.poolSearch.uniqueWeapon}
           borrowBound={s.poolSearch.borrowBound}
+          allowPoppiElementChange={s.poolSearch.allowPoppiElementChange}
+          rexFixedAttacker={s.poolSearch.rexFixedAttacker}
           onChange={s.updatePool}
           onAllowToraChange={s.updateAllowTora}
           onRolesChange={s.updatePartyRoles}
           onMatchRoleChange={enabled => s.updatePoolSearch({ matchRole: enabled })}
           onUniqueWeaponChange={enabled => s.updatePoolSearch({ uniqueWeapon: enabled })}
           onBorrowBoundChange={enabled => s.updatePoolSearch({ borrowBound: enabled })}
+          onAllowPoppiElementChange={enabled => s.updatePoolSearch({ allowPoppiElementChange: enabled })}
+          onRexFixedAttackerChange={enabled => s.updatePoolSearch({ rexFixedAttacker: enabled })}
         />
       )}
     </>

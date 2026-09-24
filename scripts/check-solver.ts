@@ -423,6 +423,8 @@ const toraOn = solveFromPool(toraPoolCatalog, {
   matchRole: true,
   uniqueWeapon: false,
   borrowBound: true,
+  allowPoppiElementChange: true,
+  rexFixedAttacker: false,
   roles: ["Attacker", "Tank", "Tank"],
 })
 assert(toraOn.length >= 1, `allow Tora should produce a team, got ${toraOn.length}`)
@@ -442,6 +444,8 @@ const toraOff = solveFromPool(toraPoolCatalog, {
   matchRole: true,
   uniqueWeapon: false,
   borrowBound: true,
+  allowPoppiElementChange: true,
+  rexFixedAttacker: false,
   roles: ["Attacker", "Tank", "Tank"],
 })
 assert(toraOff.every(team => team.members.every(m => m.driver !== "tora")), "allow Tora off must omit Tora")
@@ -459,6 +463,8 @@ const toraRedundancy = solveFromPool(toraPoolCatalog, {
   matchRole: true,
   uniqueWeapon: false,
   borrowBound: true,
+  allowPoppiElementChange: true,
+  rexFixedAttacker: false,
   roles: ["Attacker", "Tank", "Tank"],
 })
 assert(toraRedundancy.length === 0, "redundancy needs two blades per effect; one of each must fail")
@@ -504,6 +510,26 @@ assert(rexFillRole(roleCatalog, ["rex", "zig", "nia"]) === "Tank", "Rex fills Ta
 assert(rexFillRole(roleCatalog, ["rex", "zig", "merefu"]) === "Healer", "Rex fills Healer beside Zeke + Mòrag")
 assert(rexFillRole(roleCatalog, ["rex", "nia", "merefu"]) === null, "Rex stays Attacker beside Tank + Healer")
 assert(rexFillRole(roleCatalog, ["nia", "merefu", "zig"]) === null, "no Rex means no fill-in role")
+const rexAttackerOnly = driverTriples(true, roleNames, {
+  catalog: roleCatalog,
+  roles: DEFAULT_PARTY_ROLES,
+  rexFixedAttacker: true,
+})
+assert(rexAttackerOnly.length === 4, `Rex fixed attacker: expected 4 triples, got ${rexAttackerOnly.length}`)
+assert(
+  rexAttackerOnly.every(t =>
+    !t.includes("rex")
+    || (t.includes("nia") && (t.includes("merefu") || t.includes("tora")))),
+  "Rex fixed as attacker only keeps Rex + Tank + Healer",
+)
+assert(
+  !rexAttackerOnly.some(t => t.includes("rex") && t.includes("zig") && t.includes("nia")),
+  "Rex must not fill Tank when fixed as attacker",
+)
+assert(
+  !rexAttackerOnly.some(t => t.includes("rex") && t.includes("zig") && t.includes("merefu")),
+  "Rex must not fill Healer when fixed as attacker",
+)
 const twoAttackers = driverTriples(false, roleNames, {
   catalog: roleCatalog,
   roles: ["Attacker", "Attacker", "Tank"],
@@ -542,6 +568,8 @@ const boundKeep = solveFromPool(boundCatalog, {
   matchRole: false,
   uniqueWeapon: false,
   borrowBound: false,
+  allowPoppiElementChange: true,
+  rexFixedAttacker: false,
   roles: DEFAULT_PARTY_ROLES,
 })
 assert(boundKeep.length >= 1, `bound owner keep: expected teams, got ${boundKeep.length}`)
@@ -584,6 +612,8 @@ const poppiGuard = solveFromPool(poppiCandidates, {
   matchRole: false,
   uniqueWeapon: false,
   borrowBound: true,
+  allowPoppiElementChange: true,
+  rexFixedAttacker: false,
   roles: ["Attacker", "Tank", "Tank"],
 })
 assert(
@@ -603,6 +633,10 @@ assert(
 assert(
   rexAssignedFill(roleCatalog, ["rex", "zig", "merefu"], DEFAULT_PARTY_ROLES) === "Healer",
   "pool ATH leftover Healer keeps the Rex Healer fill",
+)
+assert(
+  rexAssignedFill(roleCatalog, ["rex", "zig", "merefu"], DEFAULT_PARTY_ROLES, true) === null,
+  "Keep Rex as attacker disables the Healer fill",
 )
 assert(rexBladeFitsFill(roleCatalog, "seihai", "Healer"), "Aegis may stay on Rex while he fills Healer")
 assert(rexBladeFitsFill(roleCatalog, "seihai", "Tank"), "Aegis may stay on Rex while he fills Tank")
@@ -699,6 +733,8 @@ const rexHealerPool = solveFromPool(rexFillCatalog, {
   matchRole: false,
   uniqueWeapon: false,
   borrowBound: false,
+  allowPoppiElementChange: false,
+  rexFixedAttacker: false,
   roles: DEFAULT_PARTY_ROLES,
 })
 assert(rexHealerPool.length > 0, `pool Healer fill should find teams, got ${rexHealerPool.length}`)
@@ -731,6 +767,52 @@ assert(
   "pool ATH should include a Rex-as-Tank team",
 )
 
+const poppiPoolCatalog = mockCatalog({
+  blades: [
+    poppiJs, poppiJk, poppiJd, seihaiFixed, kaguduchiFixed,
+    coverFire, coverWater, coverWind, coverIce, coverElec, coverEarth,
+  ],
+  drivers: toraDrivers,
+  effectsOf: (d, b) => (d === "rex" && b === "cover-fire" ? ["break", "topple", "launch", "smash"] : []),
+  candidates: [coverFire, coverWater, coverWind, coverIce, coverElec, coverEarth],
+  allElementsMask: 0b11111111,
+  binds: {
+    seihai: { drivers: ["rex"], fixed: true },
+    kaguduchi: { drivers: ["merefu"], fixed: true },
+    "hana js": { drivers: ["tora"], fixed: true },
+    "hana jk": { drivers: ["tora"], fixed: true },
+    "hana jd": { drivers: ["tora"], fixed: true },
+  },
+})
+const poppiPoolOpts = {
+  pool: new Set(["cover-fire", "cover-water", "cover-wind", "cover-ice", "cover-elec", "cover-earth"]),
+  allowTora: true,
+  redundancy: false,
+  advancedNewGame: false,
+  matchRole: false,
+  uniqueWeapon: false,
+  borrowBound: true,
+  rexFixedAttacker: false,
+  roles: ["Attacker", "Tank", "Tank"] as const,
+}
+const poppiPoolOn = solveFromPool(poppiPoolCatalog, {
+  ...poppiPoolOpts,
+  allowPoppiElementChange: true,
+})
+assert(poppiPoolOn.length >= 1, `Poppi element change on should produce a team, got ${poppiPoolOn.length}`)
+assert(
+  poppiPoolOn.some(team => {
+    const tora = team.members.find(m => m.driver === "tora")
+    return !!tora?.bladeElements.includes("electricity") || !!tora?.bladeElements.includes("dark")
+  }),
+  "Poppi wildcards should cover the missing elements",
+)
+const poppiPoolOff = solveFromPool(poppiPoolCatalog, {
+  ...poppiPoolOpts,
+  allowPoppiElementChange: false,
+})
+assert(poppiPoolOff.length === 0, "default Poppi elements cannot cover electricity and dark")
+
 console.log("solver duplicate checks passed", {
   screenshotLike: oneFill.length,
   threeCandidates: threeFill.length,
@@ -750,6 +832,7 @@ console.log("solver duplicate checks passed", {
   toraOff: toraOff.length,
   toraRedundancy: toraRedundancy.length,
   balancedRoles: balancedRoles.length,
+  rexAttackerOnly: rexAttackerOnly.length,
   twoAttackers: twoAttackers.length,
   boundKeep: boundKeep.length,
   poppiGuard: poppiGuard.length,
@@ -758,6 +841,8 @@ console.log("solver duplicate checks passed", {
   rexTankAssign: rexTankAssign.length,
   rexAttackerAny: rexAttackerAny.length,
   rexHealerPool: rexHealerPool.length,
+  poppiPoolOn: poppiPoolOn.length,
+  poppiPoolOff: poppiPoolOff.length,
 })
 
 const live = loadCatalog()
@@ -774,6 +859,8 @@ const liveRexFill = solveFromPool(live, {
   matchRole: false,
   uniqueWeapon: false,
   borrowBound: false,
+  allowPoppiElementChange: false,
+  rexFixedAttacker: false,
   roles: DEFAULT_PARTY_ROLES,
 })
 assert(liveRexFill.length > 0, "live catalog must still form ATH teams")

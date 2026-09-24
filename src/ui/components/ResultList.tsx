@@ -10,6 +10,7 @@ export default function ResultList(props: {
   results: TeamResult[]
   showPriority?: boolean
   roles?: PartyRoles
+  rexFixedAttacker?: boolean
 }) {
   const { t } = useI18n()
   if (props.results.length === 0) {
@@ -26,7 +27,12 @@ export default function ResultList(props: {
             <div className="grid gap-3 md:grid-cols-3">
               {team.members.map(member => {
                 const fill = member.driver === DRIVER_REX
-                  ? rexAssignedFill(props.catalog, team.members.map(item => item.driver), props.roles)
+                  ? rexAssignedFill(
+                    props.catalog,
+                    team.members.map(item => item.driver),
+                    props.roles,
+                    props.rexFixedAttacker,
+                  )
                   : null
                 return (
                   <div key={member.driver} className="flex flex-col gap-1">

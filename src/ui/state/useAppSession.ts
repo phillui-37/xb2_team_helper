@@ -55,9 +55,9 @@ export function useAppSession(catalog: Catalog) {
     () => driverTriples(
       allowTora,
       new Set(catalog.drivers.map(driver => driver.name)),
-      { catalog, roles: partyRoles },
+      { catalog, roles: partyRoles, rexFixedAttacker: poolSearch.rexFixedAttacker },
     ),
-    [allowTora, catalog, partyRoles],
+    [allowTora, catalog, partyRoles, poolSearch.rexFixedAttacker],
   )
   const canCalculate = teamMode === "pool" ? poolTriples.length > 0 : members.every(m => m.driver)
 
@@ -157,6 +157,8 @@ export function useAppSession(catalog: Catalog) {
         matchRole: poolSearch.matchRole,
         uniqueWeapon: poolSearch.uniqueWeapon,
         borrowBound: poolSearch.borrowBound,
+        allowPoppiElementChange: poolSearch.allowPoppiElementChange,
+        rexFixedAttacker: poolSearch.rexFixedAttacker,
         roles: partyRoles,
       }
       : {
