@@ -16,12 +16,16 @@ export default function PoolPage(props: {
   matchRole: boolean
   uniqueWeapon: boolean
   borrowBound: boolean
+  allowPoppiElementChange: boolean
+  rexFixedAttacker: boolean
   onChange: (pool: Set<string>) => void
   onAllowToraChange: (enabled: boolean) => void
   onRolesChange: (roles: PartyRoles) => void
   onMatchRoleChange: (enabled: boolean) => void
   onUniqueWeaponChange: (enabled: boolean) => void
   onBorrowBoundChange: (enabled: boolean) => void
+  onAllowPoppiElementChange: (enabled: boolean) => void
+  onRexFixedAttackerChange: (enabled: boolean) => void
 }) {
   const { t } = useI18n()
   const { catalog } = props
@@ -93,6 +97,25 @@ export default function PoolPage(props: {
             />
           }
           label={t("ui.allowTora")}
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={props.allowPoppiElementChange}
+              disabled={!props.allowTora}
+              onChange={event => props.onAllowPoppiElementChange(event.target.checked)}
+            />
+          }
+          label={t("ui.allowPoppiElementChange")}
+        />
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={props.rexFixedAttacker}
+              onChange={event => props.onRexFixedAttackerChange(event.target.checked)}
+            />
+          }
+          label={t("ui.rexFixedAttacker")}
         />
         <FormControlLabel
           control={

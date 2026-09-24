@@ -45,10 +45,18 @@ export const rexFillRole = (
   return null
 }
 
+export type RoleFilter = {
+  catalog: Catalog
+  roles: PartyRoles
+  /** When set, Rex stays Attacker and will not fill Tank or Healer. */
+  rexFixedAttacker?: boolean
+}
+
 export const tripleMatchesRoles = (
   catalog: Catalog,
   triple: readonly string[],
   roles: PartyRoles,
+  rexFixedAttacker = false,
 ): boolean => {
   const needed = new Map<string, number>()
   for (const role of roles)
@@ -70,6 +78,8 @@ export const tripleMatchesRoles = (
   const fill = leftover[0]
   if (fill === 'Attacker')
     return true
+  if (rexFixedAttacker)
+    return false
   if (fill !== 'Tank' && fill !== 'Healer')
     return false
   return rexFillRole(catalog, triple) === fill
@@ -78,7 +88,7 @@ export const tripleMatchesRoles = (
 export const driverTriples = (
   allowTora: boolean,
   availableDrivers?: ReadonlySet<string>,
-  roleFilter?: { catalog: Catalog; roles: PartyRoles },
+  roleFilter?: RoleFilter,
 ): string[][] => {
   const allowed = (name: string) => !availableDrivers || availableDrivers.has(name)
   const core: string[] = CORE_DRIVERS.filter(allowed)
@@ -93,5 +103,11 @@ export const driverTriples = (
   )
   if (!roleFilter)
     return sorted
-  return sorted.filter(triple => tripleMatchesRoles(roleFilter.catalog, triple, roleFilter.roles))
+  return sorted.filter(triple =>
+    tripleMatchesRoles(
+      roleFilter.catalog,
+      triple,
+      roleFilter.roles,
+      roleFilter.rexFixedAttacker,
+    ))
 }
