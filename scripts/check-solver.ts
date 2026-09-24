@@ -1,7 +1,7 @@
 import { solve } from "../src/model/solver.ts"
 import { solveFromPool } from "../src/model/poolSolve.ts"
 import { teamMemoKey } from "../src/model/results.ts"
-import { DEFAULT_PARTY_ROLES, driverTriples, rexFillRole } from "../src/model/party.ts"
+import { DEFAULT_PARTY_ROLES, driverTriples, rexAssignedFill, rexBladeFitsFill, rexFillRole } from "../src/model/party.ts"
 import { stubCatalog } from "../src/model/catalogStub.ts"
 import { loadCatalog } from "../src/model/data/loadCatalog.ts"
 import type { BladeInfo, Catalog, DriverInfo, MemberState, TeamMember } from "../src/types/common.ts"
@@ -15,12 +15,13 @@ function blade(
   advancedNewGame = false,
   auxCoreSlots = 1,
   canChangeElement = false,
+  weaponRole = name === "nia-blade" || name === "corvin" ? "Healer" : "Attacker",
 ): BladeInfo {
   return {
     id: index,
     name,
     weaponName,
-    weaponRole: "Attacker",
+    weaponRole,
     elements: ["fire"],
     elementMask,
     index,
@@ -244,7 +245,7 @@ const coverEarth = blade("cover-earth", 8, 1 << 5)
 const coverDark = blade("cover-dark", 9, 1 << 6)
 const poppiDrivers = [
   driver("rex", "Attacker", true),
-  driver("merefu", "Tank", false),
+  driver("nia", "Healer", false),
   driver("tora", "Tank", false),
 ]
 const poppiEffects = (d: string, b: string): string[] => {
@@ -261,7 +262,7 @@ const poppiCatalog = mockCatalog({
 })
 const toraPoppiMembers = (opts: Partial<Pick<MemberState, "allowElementChange" | "bladeElements">> = {}): MemberState[] => [
   member("rex", ["cover-fire", "cover-water", "cover-wind"]),
-  member("merefu", ["cover-ice", "cover-elec", "cover-earth"]),
+  member("nia", ["cover-ice", "cover-elec", "cover-earth"]),
   member("tora", ["hana js", "hana jk", "hana jd"], opts),
 ]
 
@@ -623,6 +624,149 @@ assert(
   "Poppi stay on Tora; Rex cannot borrow them",
 )
 
+assert(rexAssignedFill(roleCatalog, ["rex", "zig", "merefu"]) === "Healer", "assign mode treats Rex as Healer beside Zeke + Mòrag")
+assert(rexAssignedFill(roleCatalog, ["rex", "zig", "nia"]) === "Tank", "assign mode treats Rex as Tank beside Zeke + Nia")
+assert(
+  rexAssignedFill(roleCatalog, ["rex", "merefu", "tora"], ["Attacker", "Tank", "Tank"]) === null,
+  "Rex stays Attacker when leftover party role is Attacker",
+)
+assert(
+  rexAssignedFill(roleCatalog, ["rex", "zig", "merefu"], DEFAULT_PARTY_ROLES) === "Healer",
+  "pool ATH leftover Healer keeps the Rex Healer fill",
+)
+assert(
+  rexAssignedFill(roleCatalog, ["rex", "zig", "merefu"], DEFAULT_PARTY_ROLES, true) === null,
+  "Keep Rex as attacker disables the Healer fill",
+)
+assert(rexBladeFitsFill(roleCatalog, "seihai", "Healer"), "Aegis may stay on Rex while he fills Healer")
+assert(rexBladeFitsFill(roleCatalog, "seihai", "Tank"), "Aegis may stay on Rex while he fills Tank")
+
+const healerA = blade("healer-a", 70, 1, "rings", false, 2, false, "Healer")
+const healerB = blade("healer-b", 71, 1, "claws", false, 1, false, "Healer")
+const healerC = blade("healer-c", 72, 1, "ball", false, 1, false, "Healer")
+const tankFill = blade("tank-fill", 73, 1, "hammer", false, 1, false, "Tank")
+const tankFill2 = blade("tank-fill-2", 74, 1, "katana", false, 1, false, "Tank")
+const attackerFill = blade("attacker-fill", 75, 1, "axe", false, 3, false, "Attacker")
+const attackerFill2 = blade("attacker-fill-2", 76, 1, "lance", false, 1, false, "Attacker")
+const seihaiAtk = blade("seihai", 77, 1, "seihai", false, 2, false, "Attacker")
+const merefuLock = blade("kaguduchi", 78, 1, "whip", false, 1, false, "Tank")
+const zigLock = blade("saika", 79, 1, "saika", false, 1, false, "Attacker")
+const niaLock = blade("pyauko", 80, 1, "rings-nia", false, 1, false, "Healer")
+const fillDrivers = [
+  driverWithFixed("rex", "Attacker", true, ["seihai"]),
+  driverWithFixed("nia", "Healer", false, ["pyauko"]),
+  driverWithFixed("merefu", "Tank", false, ["kaguduchi"]),
+  driverWithFixed("zig", "Attacker", false, ["saika"]),
+]
+const fillEffects = (d: string, b: string): string[] => {
+  if (d === "rex" && b === "seihai")
+    return ["break", "topple", "launch", "smash"]
+  return []
+}
+const rexFillCandidates = [healerA, healerB, healerC, tankFill, tankFill2, attackerFill, attackerFill2]
+const rexFillCatalog = mockCatalog({
+  blades: [seihaiAtk, merefuLock, zigLock, niaLock, ...rexFillCandidates],
+  drivers: fillDrivers,
+  effectsOf: fillEffects,
+  candidates: rexFillCandidates,
+})
+
+const rexHealerAssign = solve(rexFillCatalog, [
+  member("rex", ["seihai", null, null], { matchRole: false }),
+  member("merefu", ["kaguduchi", "tank-fill", "tank-fill-2"], { matchRole: false }),
+  member("zig", ["saika", "attacker-fill", "attacker-fill-2"], { matchRole: false }),
+], false, new Map())
+assert(rexHealerAssign.length > 0, `Rex Healer fill should still find teams, got ${rexHealerAssign.length}`)
+assert(
+  rexHealerAssign.every(team => {
+    const rex = team.members.find(m => m.driver === "rex")
+    return !!rex && rex.blades.every(name => name === "seihai" || rexFillCatalog.bladeByName.get(name)?.weaponRole === "Healer")
+  }),
+  "Rex as Healer may keep Aegis and must use only Healer blades in the other slots",
+)
+assert(
+  !rexHealerAssign.some(team => team.members.some(m => m.driver === "rex" && (m.blades.includes("attacker-fill") || m.blades.includes("tank-fill")))),
+  "Rex as Healer cannot equip an Attacker or Tank blade other than Aegis",
+)
+
+const rexHealerLockedBad = solve(rexFillCatalog, [
+  member("rex", ["seihai", "attacker-fill", null], { matchRole: false }),
+  member("merefu", ["kaguduchi", "tank-fill", "tank-fill-2"], { matchRole: false }),
+  member("zig", ["saika", "healer-c", "attacker-fill-2"], { matchRole: false }),
+], false, new Map())
+assert(rexHealerLockedBad.length === 0, "locked off-role blade on Rex must reject Healer fill")
+
+const rexTankAssign = solve(rexFillCatalog, [
+  member("rex", ["seihai", null, null], { matchRole: false }),
+  member("nia", ["pyauko", "healer-a", "healer-b"], { matchRole: false }),
+  member("zig", ["saika", "attacker-fill", "attacker-fill-2"], { matchRole: false }),
+], false, new Map())
+assert(rexTankAssign.length > 0, `Rex Tank fill should still find teams, got ${rexTankAssign.length}`)
+assert(
+  rexTankAssign.every(team => {
+    const rex = team.members.find(m => m.driver === "rex")
+    return !!rex && rex.blades.every(name => name === "seihai" || rexFillCatalog.bladeByName.get(name)?.weaponRole === "Tank")
+  }),
+  "Rex as Tank may keep Aegis and must use only Tank blades in the other slots",
+)
+assert(
+  !rexTankAssign.some(team => team.members.some(m => m.driver === "rex" && (m.blades.includes("healer-a") || m.blades.includes("attacker-fill")))),
+  "Rex as Tank cannot equip Healer or Attacker blades other than Aegis",
+)
+
+const rexAttackerAny = solve(rexFillCatalog, [
+  member("rex", ["seihai", null, null], { matchRole: false }),
+  member("nia", ["pyauko", "healer-c", "healer-b"], { matchRole: false }),
+  member("merefu", ["kaguduchi", "tank-fill-2", "saika"], { matchRole: false }),
+], false, new Map())
+assert(rexAttackerAny.length > 0, "Rex staying Attacker with matchRole off may use any role")
+assert(
+  rexAttackerAny.some(team => team.members.some(m => m.driver === "rex" && (m.blades.includes("healer-a") || m.blades.includes("tank-fill") || m.blades.includes("attacker-fill")))),
+  "Rex as Attacker can still take non-Aegis blades of any role when matchRole is off",
+)
+
+const rexHealerPool = solveFromPool(rexFillCatalog, {
+  pool: new Set(["healer-a", "healer-b", "healer-c", "tank-fill", "tank-fill-2", "attacker-fill", "attacker-fill-2"]),
+  allowTora: false,
+  redundancy: false,
+  advancedNewGame: false,
+  matchRole: false,
+  uniqueWeapon: false,
+  borrowBound: false,
+  allowPoppiElementChange: false,
+  rexFixedAttacker: false,
+  roles: DEFAULT_PARTY_ROLES,
+})
+assert(rexHealerPool.length > 0, `pool Healer fill should find teams, got ${rexHealerPool.length}`)
+assert(
+  rexHealerPool.every(team => {
+    const fill = rexAssignedFill(rexFillCatalog, team.members.map(m => m.driver), DEFAULT_PARTY_ROLES)
+    const rex = team.members.find(m => m.driver === "rex")
+    if (fill !== "Healer" || !rex)
+      return true
+    return rex.blades.every(name => name === "seihai" || rexFillCatalog.bladeByName.get(name)?.weaponRole === "Healer")
+  }),
+  "pool results that treat Rex as Healer cannot give him Attacker/Tank blades except Aegis",
+)
+assert(
+  rexHealerPool.every(team => {
+    const fill = rexAssignedFill(rexFillCatalog, team.members.map(m => m.driver), DEFAULT_PARTY_ROLES)
+    const rex = team.members.find(m => m.driver === "rex")
+    if (fill !== "Tank" || !rex)
+      return true
+    return rex.blades.every(name => name === "seihai" || rexFillCatalog.bladeByName.get(name)?.weaponRole === "Tank")
+  }),
+  "pool results that treat Rex as Tank cannot give him Attacker/Healer blades except Aegis",
+)
+assert(
+  rexHealerPool.some(team => rexAssignedFill(rexFillCatalog, team.members.map(m => m.driver), DEFAULT_PARTY_ROLES) === "Healer"),
+  "pool ATH should include a Rex-as-Healer team",
+)
+assert(
+  rexHealerPool.some(team => rexAssignedFill(rexFillCatalog, team.members.map(m => m.driver), DEFAULT_PARTY_ROLES) === "Tank"),
+  "pool ATH should include a Rex-as-Tank team",
+)
+
 const poppiPoolCatalog = mockCatalog({
   blades: [
     poppiJs, poppiJk, poppiJd, seihaiFixed, kaguduchiFixed,
@@ -692,6 +836,11 @@ console.log("solver duplicate checks passed", {
   twoAttackers: twoAttackers.length,
   boundKeep: boundKeep.length,
   poppiGuard: poppiGuard.length,
+  rexHealerAssign: rexHealerAssign.length,
+  rexHealerLockedBad: rexHealerLockedBad.length,
+  rexTankAssign: rexTankAssign.length,
+  rexAttackerAny: rexAttackerAny.length,
+  rexHealerPool: rexHealerPool.length,
   poppiPoolOn: poppiPoolOn.length,
   poppiPoolOff: poppiPoolOff.length,
 })
@@ -702,6 +851,39 @@ assert(live.blades.length === 52, `expected 52 blades, got ${live.blades.length}
 assert(live.elements.length === 8, "catalog must list all 8 elements")
 assert(live.characterGifts.length > 0, "pouch gifts must load from the JSON snapshot")
 assert(live.solverCandidatesFor("rex", new Map()).length > 0, "Rex must have solver candidates")
+const liveRexFill = solveFromPool(live, {
+  pool: new Set(["elma", "wulfric", "boreas", "adenine", "electra", "finch"]),
+  allowTora: false,
+  redundancy: false,
+  advancedNewGame: false,
+  matchRole: false,
+  uniqueWeapon: false,
+  borrowBound: false,
+  allowPoppiElementChange: false,
+  rexFixedAttacker: false,
+  roles: DEFAULT_PARTY_ROLES,
+})
+assert(liveRexFill.length > 0, "live catalog must still form ATH teams")
+assert(
+  liveRexFill.every(team => {
+    const fill = rexAssignedFill(live, team.members.map(m => m.driver), DEFAULT_PARTY_ROLES)
+    const rex = team.members.find(m => m.driver === "rex")
+    if (!fill || !rex)
+      return true
+    return rex.blades.every(name => name === "seihai" || live.bladeByName.get(name)?.weaponRole === fill)
+  }),
+  "live Rex fill teams may keep Aegis and must match Healer/Tank on every other blade",
+)
+assert(
+  liveRexFill.every(team => {
+    const fill = rexAssignedFill(live, team.members.map(m => m.driver), DEFAULT_PARTY_ROLES)
+    const rex = team.members.find(m => m.driver === "rex")
+    if (fill !== "Healer" || !rex)
+      return true
+    return !rex.blades.includes("elma") && !rex.blades.includes("wulfric")
+  }),
+  "live Rex-as-Healer must not receive Elma or Wulfric",
+)
 console.log("catalog snapshot checks passed", {
   drivers: live.drivers.length,
   blades: live.blades.length,

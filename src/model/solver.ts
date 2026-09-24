@@ -1,7 +1,8 @@
 import type { BladeInfo, BladeOwners, Catalog, ElementChoice, MemberState, TeamMember, TeamResult } from "../types/common"
-import { ANY_ELEMENT, DRIVER_NIA } from "../types/common"
+import { ANY_ELEMENT, DRIVER_NIA, DRIVER_REX } from "../types/common"
 import { combinations, subsets } from "./combinatorics"
 import { hasNiaDriver } from "./members"
+import { nativeRoleMatchApplies, rexAssignedFill, rexBladeFitsFill, type PartyRole, type PartyRoles } from "./party"
 import { RESULT_CAP, compareTeamResults, createTeamCollector, teamAuxCoreSlots, teamPoolHits } from "./results"
 
 function elementContribution(
@@ -213,6 +214,7 @@ function collectStealable(
   catalog: Catalog,
   works: DriverWork[],
   owners: BladeOwners,
+  rexFill: PartyRole | null,
 ): { borrower: string; blades: Stealable[] } | undefined {
   const borrower = works.find(work =>
     work.borrowBound && !!catalog.driverByName.get(work.driver)?.canUseForeign)
@@ -230,7 +232,10 @@ function collectStealable(
         continue
       if (!catalog.isEligible(borrower.driver, blade, owners))
         continue
-      if (borrower.matchRole && !catalog.isOnRole(borrower.driver, blade))
+      if (borrower.driver === DRIVER_REX && !rexBladeFitsFill(catalog, blade, rexFill))
+        continue
+      if (borrower.matchRole && nativeRoleMatchApplies(borrower.driver, rexFill)
+        && !catalog.isOnRole(borrower.driver, blade))
         continue
       blades.push({ fromDriver: work.driver, slotIdx: i, blade })
     }
@@ -245,12 +250,18 @@ export function solve(
   owners: BladeOwners,
   advancedNewGame = false,
   priorityPool?: ReadonlySet<string>,
+  partyRoles?: PartyRoles,
 ): TeamResult[] {
   if (members.length !== 3 || members.some(m => !m.driver))
     return []
 
   const need = redundancy ? 2 : 1
   const niaDriverPicked = hasNiaDriver(members)
+  const rexFill = rexAssignedFill(
+    catalog,
+    members.map(member => member.driver as string),
+    partyRoles,
+  )
   const works: DriverWork[] = []
 
   for (const member of members) {
@@ -278,6 +289,11 @@ export function solve(
     recomputeLocked(catalog, work)
     works.push(work)
   }
+
+  if (works.some(work =>
+    work.driver === DRIVER_REX
+    && work.locked.some(name => !!name && !rexBladeFitsFill(catalog, name, rexFill))))
+    return []
 
   works.sort((a, b) => a.emptyIdx.length - b.emptyIdx.length)
 
@@ -339,10 +355,13 @@ export function solve(
             lockedWeapons.add(weapon)
         }
       }
-      const available = catalog.solverCandidatesFor(work.driver, owners, work.matchRole).filter(b => {
+      const matchNativeRole = work.matchRole && nativeRoleMatchApplies(work.driver, rexFill)
+      const available = catalog.solverCandidatesFor(work.driver, owners, matchNativeRole).filter(b => {
         if ((usedMask & (1n << BigInt(b.index))) !== 0n)
           return false
         if (niaDriverPicked && b.name === DRIVER_NIA)
+          return false
+        if (work.driver === DRIVER_REX && !rexBladeFitsFill(catalog, b.name, rexFill))
           return false
         if (catalog.isForeignBound(work.driver, b.name)) {
           if (!work.borrowBound)
@@ -403,7 +422,7 @@ export function solve(
     return found
   }
 
-  const steal = collectStealable(catalog, works, owners)
+  const steal = collectStealable(catalog, works, owners, rexFill)
   const borrowerWork = steal
     ? works.find(work => work.driver === steal.borrower)
     : undefined

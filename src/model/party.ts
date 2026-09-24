@@ -1,5 +1,5 @@
 import type { Catalog } from "../types/common"
-import { DRIVER_ORDER, DRIVER_REX, DRIVER_TORA } from "../types/common"
+import { BLADE_SEIHAI, DRIVER_ORDER, DRIVER_REX, DRIVER_TORA } from "../types/common"
 import { combinations } from "./combinatorics"
 
 export const CORE_DRIVERS = DRIVER_ORDER.filter(name => name !== DRIVER_TORA)
@@ -43,6 +43,60 @@ export const rexFillRole = (
   if (!otherRoles.has('Healer') && otherRoles.has('Tank'))
     return 'Healer'
   return null
+}
+
+/** Party leftover must match the Tank/Healer stand-in; otherwise Rex stays Attacker. */
+export const rexAssignedFill = (
+  catalog: Catalog,
+  drivers: readonly string[],
+  roles?: PartyRoles,
+  rexFixedAttacker = false,
+): PartyRole | null => {
+  if (rexFixedAttacker)
+    return null
+  const fill = rexFillRole(catalog, drivers)
+  if (!fill || !roles)
+    return fill
+  const needed = new Map<string, number>()
+  for (const role of roles)
+    needed.set(role, (needed.get(role) ?? 0) + 1)
+  for (const driver of drivers.filter(name => name !== DRIVER_REX)) {
+    const role = catalog.driverByName.get(driver)?.role ?? ''
+    if (!consumeRole(needed, role))
+      return null
+  }
+  const leftover = leftoverRoles(needed)
+  return leftover.length === 1 && leftover[0] === fill ? fill : null
+}
+
+/** Aegis may stay on Rex; every other blade must use the fill role. */
+export const rexBladeFitsFill = (
+  catalog: Catalog,
+  blade: string,
+  fill: PartyRole | null,
+): boolean => {
+  if (!fill)
+    return true
+  if (blade === BLADE_SEIHAI)
+    return true
+  return catalog.bladeByName.get(blade)?.weaponRole === fill
+}
+
+/** Rex fill-in replaces his native Attacker match for candidate / steal filters. */
+export const nativeRoleMatchApplies = (driver: string, fill: PartyRole | null): boolean =>
+  !(driver === DRIVER_REX && !!fill)
+
+export const bladeMatchesPartyRole = (
+  catalog: Catalog,
+  driver: string,
+  blade: string,
+  partyDrivers: readonly string[],
+  roles?: PartyRoles,
+): boolean => {
+  const fill = driver === DRIVER_REX ? rexAssignedFill(catalog, partyDrivers, roles) : null
+  if (fill)
+    return rexBladeFitsFill(catalog, blade, fill)
+  return catalog.isOnRole(driver, blade)
 }
 
 export type RoleFilter = {

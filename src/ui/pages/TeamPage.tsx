@@ -86,6 +86,9 @@ export default function TeamPage(props: { session: AppSession }) {
               catalog={s.catalog}
               results={s.results}
               showPriority={s.teamMode === "pool"}
+              {...(s.teamMode === "pool"
+                ? { roles: s.partyRoles, rexFixedAttacker: s.poolSearch.rexFixedAttacker }
+                : {})}
             />
           )}
         </section>

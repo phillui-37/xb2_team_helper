@@ -102,7 +102,7 @@ export function solveFromPool(
   )
   const quota = Math.max(1, Math.floor(RESULT_CAP / Math.max(1, prepared.length)))
   const buckets = prepared.map(members =>
-    solve(catalog, members, options.redundancy, new Map(), options.advancedNewGame, options.pool),
+    solve(catalog, members, options.redundancy, new Map(), options.advancedNewGame, options.pool, roles),
   )
   const { results, take } = createTeamCollector()
   for (const bucket of buckets)
