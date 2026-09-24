@@ -31,7 +31,7 @@ export function BladeSlotSummary(props: {
         allowElementChange={props.allowElementChange}
         elementChoice={props.elementChoice}
         onElementChange={props.onElementChange}
-        partyDrivers={props.partyDrivers}
+        {...(props.partyDrivers ? { partyDrivers: props.partyDrivers } : {})}
       />
     </div>
   )
